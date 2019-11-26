@@ -43,3 +43,4 @@ If you have *NOT* supplied a new config however and are using the Hubbub image y
 - Implement the LabelSelectors.
 - ~The IsNew() should do a check on duration and ensure if 'x' time has passed the notification should be sent regardless.~
 - The 'value' field in the slack post should be exsposed in the config and should take Go templating syntax.
+- Fancy up readme, include config example
