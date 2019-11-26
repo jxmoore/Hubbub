@@ -13,14 +13,14 @@ If you do not have the go command on your system, you need to [Install Go](http:
 
 Hubbub runs indeffinatly and listens for pod and container changes on a channel until the application is terminated. If a pod failure is seen on the channel the information about the pod and container is sent as a notification using STDOUT or Slack.
 
-![Example of a segmentation fault that causes the app to crash](images/segfault.png)
+![Example of a segmentation fault that causes the app to crash](images/segfault.PNG)
 
-```
-  When a change is seen Hubbub checks to see if its new, this is done using a very soft match.
-  This is to prevent noise, for example to ensure a constant restarting container does not generate constant... hubbub. If the same container/pod was **last seen** five minutes ago the notification is considered new again and will be sent. 
+
+> When a change is seen Hubbub checks to see if its new, this is done using a very soft match.
+> This is to prevent noise, for example to ensure a constant restarting container does not generate constant... hubbub. If the same  
+> container/pod was last seen five minutes ago the notification is considered new again and will be sent. 
 	
-  See the IsNew() method on the PodStatusInformation struct in kube.go for information on how the decision is made.
-```
+>> See the IsNew() method on the PodStatusInformation struct in kube.go for information on how the decision is made.
 
 ## Build
 If building the application locally do so outside of $GOPATH and ensure that you are using at least go V1.12. Aside from that a simple `go build .` in the PWD should result in a built binary. However Hubbub uses the InCluster config, so a built locally binary will do you no good unless your troubleshooting the build or planning on moving it to a container in a cluster. The supplied dockerfile can be used to build a useable docker image.
@@ -39,7 +39,7 @@ If you have *NOT* supplied a new config however and are using the Hubbub image y
 
 ### TODO 
 - Tests.
-- Parse the slack response body to ensure 'ok' is received back.
+~- Parse the slack response body to ensure 'ok' is received back.~
 - Implement the LabelSelectors.
 - The IsNew() should do a check on duration and ensure if 'x' time has passed the notification should be sent regardless.
 - The 'value' field in the slack post should be exsposed in the config and should take Go templating syntax.
