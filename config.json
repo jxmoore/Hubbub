@@ -1,0 +1,7 @@
+{
+	"namespace": "default",
+	"slack": {
+		"webhook": "webhook",
+		"channel": "#manopbota"
+		}
+}

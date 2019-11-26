@@ -1,0 +1,57 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: hubbub
+  namespace: default
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: hubbub
+    spec:
+      containers:
+      - name: hubbub
+        image: repo/hubbub:0.1
+        env:
+        - name: AZMON_COLLECT_ENV
+          value: "FALSE"             
+      dnsConfig:
+        options:
+          - name: single-request-reopen
+      imagePullSecrets:
+      - name: artcred
+      serviceAccountName: hubbub
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: hubbub
+rules:
+- apiGroups: [""]
+  resources: ["pods", "replicationcontrollers"]
+  verbs: ["get", "watch", "list"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hubbub
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: hubbub
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hubbub
+subjects:
+  - kind: ServiceAccount
+    name: hubbub
+    namespace: default      
