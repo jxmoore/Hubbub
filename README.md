@@ -39,7 +39,7 @@ If you have *NOT* supplied a new config however and are using the Hubbub image y
 
 ### TODO 
 - Tests.
-~- Parse the slack response body to ensure 'ok' is received back.~
+- Parse the slack response body to ensure 'ok' is received back.
 - Implement the LabelSelectors.
-- The IsNew() should do a check on duration and ensure if 'x' time has passed the notification should be sent regardless.
+- ~The IsNew() should do a check on duration and ensure if 'x' time has passed the notification should be sent regardless.~
 - The 'value' field in the slack post should be exsposed in the config and should take Go templating syntax.
