@@ -27,36 +27,31 @@ func TestTimeCheck(t *testing.T) {
 	testSuite := map[string]struct {
 		expectedReturn bool
 		timeDiff       time.Duration
-		PodInfo        PodStatusInformation
 	}{
 		"timeCheck should return true #1": {
 			expectedReturn: true,
 			timeDiff:       time.Minute * -7,
-			PodInfo:        Pod,
 		},
 		"timeCheck should return true #2": {
 			expectedReturn: true,
 			timeDiff:       time.Hour * -5,
-			PodInfo:        Pod,
 		},
 		"timeCheck should return false #1": {
 			expectedReturn: false,
 			timeDiff:       time.Hour * 1,
-			PodInfo:        Pod,
 		},
 		"timeCheck should return false #2": {
 			expectedReturn: false,
 			timeDiff:       time.Minute * 50,
-			PodInfo:        Pod,
 		},
 	}
 
 	for testName, testCase := range testSuite {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
-		fakePod := testCase.PodInfo
+		fakePod := Pod
 		fakePod.Seen = time.Now().Add(testCase.timeDiff)
-		ok := testCase.PodInfo.timeCheck(fakePod)
+		ok := Pod.timeCheck(fakePod)
 
 		if ok != testCase.expectedReturn {
 			t.Errorf("expected %v but received %v", testCase.expectedReturn, ok)
