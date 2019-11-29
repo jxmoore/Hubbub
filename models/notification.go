@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"strings"
 )
 
 // NotificationHandler is an interface that knows how to build out a notification and display to the
@@ -165,7 +166,11 @@ func (s Slack) Notify(msg string) error {
 		return errors.New(err.Error())
 	}
 
-	fmt.Printf("Slack message sent \n%v", string(body))
+	if strings.ToLower(string(body)) == "ok" {
+		fmt.Printf("Slack message sent\n")
+	} else {
+		fmt.Printf("Attempted to send message but received %v\n", string(body))
+	}
 
 	return nil
 }
