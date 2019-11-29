@@ -2,6 +2,7 @@ package models
 
 import (
 	"reflect"
+	"strings"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -30,11 +31,11 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 	p.Message = pod.Status.Message
 	p.Seen = time.Now()
 
-	if len(pod.Status.ContainerStatuses) == 0{
+	if len(pod.Status.ContainerStatuses) == 0 {
 
 		p.FinishedAt = pod.CreationTimestamp.Time
 		p.ExitCode = -1
-		p.Reason = pod.Status.Reason 
+		p.Reason = pod.Status.Reason
 		p.Image = "Unknown"
 		p.ContainerName = "Unknown"
 
@@ -43,7 +44,7 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 			p.ContainerName = pod.Spec.Containers[0].Name
 		}
 
-	} else{
+	} else {
 
 		for _, cst := range pod.Status.ContainerStatuses {
 
@@ -51,7 +52,7 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 			if cst.State.Terminated == nil {
 				continue
 			}
-	
+
 			// If we land in default we need to ensure that we dont alert on good pods
 			if cst.State.Terminated.Reason != "Completed" {
 				p.FinishedAt = cst.State.Terminated.FinishedAt.Time
@@ -76,7 +77,7 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation) bool {
 		return false
 	}
 
-	// its been at over 5 minutes, so its new yet again. 
+	// its been at over 5 minutes, so its new yet again.
 	if ok := p.timeCheck(lastSeen); ok {
 		return true
 	}
@@ -100,6 +101,12 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation) bool {
 
 	// same container, same exit code
 	if p.ContainerName == lastSeen.ContainerName && p.ExitCode == lastSeen.ExitCode {
+
+		return false
+	}
+
+	// same container, same exit code
+	if p.PodName == lastSeen.PodName && p.ExitCode == lastSeen.ExitCode {
 
 		return false
 	}
@@ -131,7 +138,6 @@ func (p PodStatusInformation) ExitCodeLookup() string {
 		126: "There was a error regardging permissions or the container could not be invoked.",
 		125: "The Docker Run command has failed.",
 		1:   "Application Error.",
-	        -1: "This was likely an evicition due to pressure on the host.",
 	}
 
 	if i, ok := exitCodes[p.ExitCode]; ok {

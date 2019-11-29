@@ -22,6 +22,7 @@ func TestConfigLoad(t *testing.T) {
 		webhook   string
 		channel   string
 		STDOUT    bool
+		Debug     bool
 		filePath  string
 		// Delete the config files or let them persist on disk
 		clean bool
@@ -31,6 +32,7 @@ func TestConfigLoad(t *testing.T) {
 			webhook:   "https://github.com/jxmoore/Hubbub/tree/develop/models",
 			channel:   "#Tech_General",
 			STDOUT:    false,
+			Debug:     true,
 			filePath:  "./testConf1.json",
 			clean:     true,
 		},
@@ -39,6 +41,7 @@ func TestConfigLoad(t *testing.T) {
 			webhook:   "https://duckduckgo.com",
 			channel:   "#Tech_InfoSec",
 			STDOUT:    false,
+			Debug:     true,
 			filePath:  "./testConf2.json",
 			clean:     true,
 		},
@@ -47,6 +50,7 @@ func TestConfigLoad(t *testing.T) {
 			webhook:   "https://bitbucket.com",
 			channel:   "#random",
 			STDOUT:    true,
+			Debug:     false,
 			filePath:  "./testConf3.json",
 			clean:     true,
 		},
@@ -60,6 +64,7 @@ func TestConfigLoad(t *testing.T) {
 		configFile.Slack.WebHook = testCase.webhook
 		configFile.Slack.Channel = testCase.channel
 		configFile.STDOUT = testCase.STDOUT
+		configFile.Debug = testCase.Debug
 
 		content, err := json.Marshal(configFile)
 		if err != nil {
@@ -149,7 +154,7 @@ func TestVarLoad(t *testing.T) {
 	}
 
 	for testName, testCase := range testSuite {
-		
+
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 
 		c := Config{}

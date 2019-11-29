@@ -20,6 +20,7 @@ type Config struct {
 		Icon    string `json:"icon,omitempty"`
 	} `json:"slack"`
 	STDOUT bool `json:"stdout,omitempty"`
+	Debug  bool `json:"debug,omitempty"`
 }
 
 // Load attempts to read the config file and unmarshel it into 'c'
