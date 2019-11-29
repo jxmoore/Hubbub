@@ -30,6 +30,8 @@ func (c *Config) Load(configFile string) error {
 		return fmt.Errorf("Unable to open config file %v. %v ", configFile, err.Error())
 	}
 
+	defer file.Close()
+
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
 		return fmt.Errorf("Error reading file %v. %v ", configFile, err.Error())
