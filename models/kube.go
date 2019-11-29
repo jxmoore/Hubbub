@@ -2,7 +2,6 @@ package models
 
 import (
 	"reflect"
-	"strings"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -64,6 +63,7 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 			}
 		}
 	}
+
 }
 
 // IsNew compares fields in p with the ones passed in on lastSeen. The purpose is to validate
@@ -76,6 +76,9 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation) bool {
 	if p.Image == "" || p.ContainerName == "" || p.FinishedAt.IsZero() {
 		return false
 	}
+
+	p.ConvertTime()
+	lastSeen.ConvertTime()
 
 	// its been at over 5 minutes, so its new yet again.
 	if ok := p.timeCheck(lastSeen); ok {
