@@ -22,7 +22,7 @@ type PodStatusInformation struct {
 	Seen          time.Time
 }
 
-// Load takes a pod info, verifies the pod/container failed and then loads the attributes of them into the PodStatusInformation struct
+// Load takes a pod info and then loads the attributes of them into the PodStatusInformation struct
 func (p *PodStatusInformation) Load(pod *v1.Pod) {
 
 	p.Namespace = pod.Namespace
@@ -31,24 +31,39 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 	p.Message = pod.Status.Message
 	p.Seen = time.Now()
 
-	for _, cst := range pod.Status.ContainerStatuses {
+	if len(pod.Status.ContainerStatuses) == 0{
 
-		// Skipping the terminated container
-		if cst.State.Terminated == nil {
-			continue
+		p.FinishedAt = pod.CreationTimestamp.Time
+		p.ExitCode = -1
+		p.Reason = pod.Status.Reason 
+		p.Image = "Unknown"
+		p.ContainerName = "Unknown"
+
+		if len(pod.Spec.Containers) > 0 {
+			p.Image = pod.Spec.Containers[0].Image
+			p.ContainerName = pod.Spec.Containers[0].Name
 		}
 
-		// If we land in default we need to ensure that we dont alert on good pods
-		if cst.State.Terminated.Reason != "Completed" {
-			p.FinishedAt = cst.State.Terminated.FinishedAt.Time
-			p.Image = cst.Image
-			p.ContainerName = cst.Name
-			p.ExitCode = int(cst.State.Terminated.ExitCode)
-			p.Reason = cst.State.Terminated.Reason
-			break
+	} else{
+
+		for _, cst := range pod.Status.ContainerStatuses {
+
+			// Skipping the terminated container
+			if cst.State.Terminated == nil {
+				continue
+			}
+	
+			// If we land in default we need to ensure that we dont alert on good pods
+			if cst.State.Terminated.Reason != "Completed" {
+				p.FinishedAt = cst.State.Terminated.FinishedAt.Time
+				p.Image = cst.Image
+				p.ContainerName = cst.Name
+				p.ExitCode = int(cst.State.Terminated.ExitCode)
+				p.Reason = cst.State.Terminated.Reason
+				break
+			}
 		}
 	}
-
 }
 
 // IsNew compares fields in p with the ones passed in on lastSeen. The purpose is to validate
@@ -62,21 +77,18 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation) bool {
 		return false
 	}
 
+	// its been at over 5 minutes, so its new yet again. 
+	if ok := p.timeCheck(lastSeen); ok {
+		return true
+	}
+
 	// Identical
 	if reflect.DeepEqual(p, lastSeen) {
-
-		if ok := p.timeCheck(lastSeen); ok { //alert if its been 5 minutes
-			return true
-		}
 
 		return false
 	}
 
 	if p.PodName == lastSeen.PodName && p.ContainerName == lastSeen.PodName {
-
-		if ok := p.timeCheck(lastSeen); ok {
-			return true
-		}
 
 		return false
 	}
@@ -84,19 +96,11 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation) bool {
 	// Same pod, same start time
 	if p.PodName == lastSeen.PodName && p.StartedAt == lastSeen.StartedAt {
 
-		if ok := p.timeCheck(lastSeen); ok {
-			return true
-		}
-
 		return false
 	}
 
 	// same container, same exit code
 	if p.ContainerName == lastSeen.ContainerName && p.ExitCode == lastSeen.ExitCode {
-
-		if ok := p.timeCheck(lastSeen); ok {
-			return true
-		}
 
 		return false
 	}
@@ -120,14 +124,15 @@ func (p *PodStatusInformation) ConvertTime() {
 func (p PodStatusInformation) ExitCodeLookup() string {
 
 	exitCodes := map[int]string{
-		139: "Segmentation fault",
-		143: "The container received s SIGTERM",
-		137: "The container received a SIGKILL",
-		127: "Command not found",
-		130: "Container terminated",
-		126: "There was a error regardging permissions or the container could not be invoked",
-		125: "The Docker Run command has failed",
-		1:   "Application Error",
+		139: "Segmentation fault.",
+		143: "The container received s SIGTERM.",
+		137: "The container received a SIGKILL.",
+		127: "Command not found.",
+		130: "Container terminated.",
+		126: "There was a error regardging permissions or the container could not be invoked.",
+		125: "The Docker Run command has failed.",
+		1:   "Application Error.",
+	        -1: "This was likely an evicition due to pressure on the host.",
 	}
 
 	if i, ok := exitCodes[p.ExitCode]; ok {
