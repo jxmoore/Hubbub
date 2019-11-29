@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"gihutb.com/jxmoore/hubbub/models"
 	v1 "k8s.io/api/core/v1"
@@ -20,7 +21,10 @@ func startWatcher(kubeClient *kubernetes.Clientset, config *models.Config, handl
 
 	// Create the watcher, nill listoptions should result in everything in NAMESPACE
 	fmt.Println("Starting watcher...")
-	watcher, err := kubeClient.CoreV1().Pods(config.Namespace).Watch(meta_v1.ListOptions{})
+
+	timeout := int64(time.Second * 99999999) // bandaid, ideally we would handle this with a smaller number and handle it in podwatcher.
+
+	watcher, err := kubeClient.CoreV1().Pods(config.Namespace).Watch(meta_v1.ListOptions{TimeoutSeconds: &timeout})
 	if err != nil {
 		return fmt.Errorf("Cannot create Pod event watcher, %v", err.Error())
 	}
@@ -33,8 +37,8 @@ func startWatcher(kubeClient *kubernetes.Clientset, config *models.Config, handl
 
 	fmt.Println("Listening on sigterm channel for termination...\n\n")
 
-	// blocking while we wait for either signal on the channel, the podWatcher is running on his own go routine
-	// so this just ensures everything runs until a signal is sent on the sigterm channel
+	//	blocking while we wait for either signal on the channel, the podWatcher is running on his own go routine
+	//  so this just ensures everything runs until a signal is sent on the sigterm channel
 	<-sigterm
 
 	return nil
@@ -49,7 +53,11 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 	for {
 
 		select {
-		case e := <-watcher.ResultChan():
+		case e, ok := <-watcher.ResultChan():
+
+			if !ok {
+				return
+			}
 
 			if e.Object == nil {
 				return
