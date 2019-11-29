@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"gihutb.com/jxmoore/hubbub/models"
@@ -60,6 +61,13 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 				continue
 			}
 
+			// ignore itself
+			if config.Self != "" {
+				if strings.Contains(strings.ToLower(pod.Name), strings.ToLower(config.Self)) {
+					continue
+				}
+			}
+
 			switch e.Type {
 
 			// Modified is the only type we care about here
@@ -67,7 +75,7 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 			case watch.Modified:
 
 				if config.Debug {
-					fmt.Printf("New pod change detected :\nPod : %v\nPhase : %v\nMessage : %v\nReason : %v\nContainer info : \n%v\n",
+					fmt.Printf("New pod change detected :\nPod : %v - Phase : %v\nMessage : %v - Reason : %v\nContainer info : \n%v\n",
 						pod.Name, pod.Status.Phase, pod.Status.Message, pod.Status.Reason, pod.Status.ContainerStatuses)
 				}
 

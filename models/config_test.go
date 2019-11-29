@@ -23,6 +23,7 @@ func TestConfigLoad(t *testing.T) {
 		channel   string
 		STDOUT    bool
 		Debug     bool
+		Self      string
 		filePath  string
 		// Delete the config files or let them persist on disk
 		clean bool
@@ -34,6 +35,7 @@ func TestConfigLoad(t *testing.T) {
 			STDOUT:    false,
 			Debug:     true,
 			filePath:  "./testConf1.json",
+			Self:      "Default",
 			clean:     true,
 		},
 		"Created config with Secret namespace should be identical to loaded config": {
@@ -41,6 +43,7 @@ func TestConfigLoad(t *testing.T) {
 			webhook:   "https://duckduckgo.com",
 			channel:   "#Tech_InfoSec",
 			STDOUT:    false,
+			Self:      "infosec",
 			Debug:     true,
 			filePath:  "./testConf2.json",
 			clean:     true,
@@ -49,6 +52,7 @@ func TestConfigLoad(t *testing.T) {
 			namespace: "testo",
 			webhook:   "https://bitbucket.com",
 			channel:   "#random",
+			Self:      "stuff",
 			STDOUT:    true,
 			Debug:     false,
 			filePath:  "./testConf3.json",
