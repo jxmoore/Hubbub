@@ -12,7 +12,7 @@ var configFile = Config{
 	STDOUT:    false,
 }
 
-// TestLoadConfig tests the Load() method on Config.
+// TestConfigLoad tests the Load() method on Config.
 // It does this by creating a config file using a Config{} and verifying that the struct used
 // to write the json config file matches the struct returned from the Config.Load() method
 func TestConfigLoad(t *testing.T) {

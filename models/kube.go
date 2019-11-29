@@ -2,7 +2,6 @@ package models
 
 import (
 	"reflect"
-	"strings"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
