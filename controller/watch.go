@@ -67,7 +67,7 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 			case watch.Modified:
 
 				if config.Debug {
-					fmt.Printf("New pod change detected :\nPod : %v\nPhase : %v\nMessage : %v\nReason : %v\nContainer info : \n%v\n",
+					fmt.Printf("New pod change detected :\nPod : %v - Phase : %v\nMessage : %v - Reason : %v\nContainer info : \n%v\n",
 						pod.Name, pod.Status.Phase, pod.Status.Message, pod.Status.Reason, pod.Status.ContainerStatuses)
 				}
 
