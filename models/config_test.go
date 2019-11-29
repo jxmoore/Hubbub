@@ -12,7 +12,7 @@ var configFile = Config{
 	STDOUT:    false,
 }
 
-// TestConfigLoad tests the Load() method on Config.
+// TestLoadConfig tests the Load() method on Config.
 // It does this by creating a config file using a Config{} and verifying that the struct used
 // to write the json config file matches the struct returned from the Config.Load() method
 func TestConfigLoad(t *testing.T) {
@@ -40,6 +40,14 @@ func TestConfigLoad(t *testing.T) {
 			channel:   "#Tech_InfoSec",
 			STDOUT:    false,
 			filePath:  "./testConf2.json",
+			clean:     true,
+		},
+		"Created config with testo namespace should be identical to loaded config": {
+			namespace: "testo",
+			webhook:   "https://bitbucket.com",
+			channel:   "#random",
+			STDOUT:    true,
+			filePath:  "./testConf3.json",
 			clean:     true,
 		},
 	}
@@ -96,6 +104,90 @@ func TestConfigLoad(t *testing.T) {
 				t.Errorf("Error on deletion  %v", err)
 			}
 
+		}
+	}
+
+}
+
+// TestVarLoad() Creates the expected env variables found in LoadEnvVars() and then calls the method on an empty Config{}
+// assuming everything is working as expected the Config should contain the values for the env variables or the default values
+// based on the test case.
+func TestVarLoad(t *testing.T) {
+
+	testSuite := map[string]struct {
+		slackChannel string
+		webhook      string
+		user         string
+		icon         string
+		title        string
+		namespace    string
+	}{
+		"Config should be populated with values derived from ENV variables #1": {
+			slackChannel: "hubbub",
+			webhook:      "hubbub",
+			user:         "hubbub",
+			icon:         "hubbub",
+			title:        "hubbub",
+			namespace:    "hubbub",
+		},
+		"Config should be populated with values derived from ENV variables #2": {
+			slackChannel: "alerts",
+			webhook:      "alerts",
+			user:         "alerts",
+			icon:         "alerts",
+			title:        "alerts",
+			namespace:    "alerts",
+		},
+		"Config should be populated with values derived from the defaults in LoadEnvVars #3": {
+			slackChannel: "alerts",
+			webhook:      "alerts",
+			user:         "",
+			icon:         "",
+			title:        "",
+			namespace:    "alerts",
+		},
+	}
+
+	for testName, testCase := range testSuite {
+		
+		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
+
+		c := Config{}
+		os.Setenv("NAMESAPCE", testCase.namespace)
+		os.Setenv("SLACK_CHANNEL", testCase.slackChannel)
+		os.Setenv("SLACK_WEBHOOK", testCase.webhook)
+		os.Setenv("SLACK_USER", testCase.user)
+		os.Setenv("SLACK_ICON", testCase.icon)
+		os.Setenv("SLACK_TITLE", testCase.title)
+		c.LoadEnvVars()
+
+		if testCase.user == "" {
+			testCase.user = "Hubbub"
+		}
+		if testCase.icon == "" {
+			testCase.icon = "https://www.sampalm.com/images/me.jpg"
+		}
+		if testCase.title == "" {
+			testCase.title = "There has been a pod error in production!"
+		}
+
+		if c.Slack.Channel != testCase.slackChannel {
+			t.Errorf("Expected the slack channel in the config to match the testcase %v but received %v", testCase.slackChannel, c.Slack.Channel)
+		}
+		if c.Slack.WebHook != testCase.webhook {
+			t.Errorf("Expected the slack webhook in the config to match the testcase %v but received %v", testCase.webhook, c.Slack.WebHook)
+		}
+		if c.Namespace != testCase.namespace {
+			t.Errorf("Expected the namespace in the config to match the testcase %v but received %v", testCase.namespace, c.Namespace)
+		}
+		if testCase.user != c.Slack.User {
+			t.Errorf("Expected the slack user in the config to match the testcase %v but received %v", testCase.user, c.Slack.User)
+		}
+		if testCase.icon != c.Slack.Icon {
+			t.Errorf("Expected the slack icon in the config to match the testcase %v but received %v", testCase.icon, c.Slack.Icon)
+		}
+		if testCase.title != c.Slack.Title {
+			t.Errorf("Expected the slack title message in the config to match the testcase %v but received %v", testCase.title, c.Slack.Title)
 		}
 	}
 
