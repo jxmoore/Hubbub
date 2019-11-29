@@ -13,7 +13,10 @@ If you do not have the go command on your system, you need to [Install Go](http:
 
 Hubbub runs indeffinatly and listens for pod and container changes on a channel until the application is terminated. If a pod failure is seen on the channel the information about the pod and container is sent as a notification using STDOUT or Slack.
 
-![Example of a segmentation fault that causes the app to crash](images/segfault.png) ![Example of an eviction](images/eviction.png)
+<p align="center">
+  <img width="590" height="165"  src="images/segfault.PNG">
+  <img width="590" height="165"  src="images/eviction.PNG">
+</p>
 
 > When a change is seen Hubbub checks to see if its new, this is done using a very soft match.
 > This is to prevent noise, for example to ensure a constant restarting container does not generate constant... hubbub. If the same  
