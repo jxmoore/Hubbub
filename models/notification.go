@@ -152,7 +152,6 @@ func (s Slack) Notify(msg string) error {
 	}
 
 	request.Header.Add("Content-Type", "application/json")
-	fmt.Println("Sending do!")
 	response, err := client.Do(request)
 	if err != nil {
 		return errors.New(err.Error())
@@ -166,7 +165,7 @@ func (s Slack) Notify(msg string) error {
 		return errors.New(err.Error())
 	}
 
-	fmt.Printf("Slack message sent \n%v", body) // 99% sure the response is 'ok' if successful. need to verify
+	fmt.Printf("Slack message sent \n%v", string(body))
 
 	return nil
 }
