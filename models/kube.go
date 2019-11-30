@@ -2,6 +2,7 @@ package models
 
 import (
 	"reflect"
+	"strings"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -30,7 +31,7 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 	p.Message = pod.Status.Message
 	p.Seen = time.Now()
 
-	if len(pod.Status.ContainerStatuses) == 0 {
+	if len(pod.Status.ContainerStatuses) == 0 && pod.Status.Phase == v1.PodFailed { // skip pending in default case
 
 		p.FinishedAt = pod.CreationTimestamp.Time
 		p.ExitCode = -1
@@ -63,7 +64,6 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 			}
 		}
 	}
-
 }
 
 // IsNew compares fields in p with the ones passed in on lastSeen. The purpose is to validate
