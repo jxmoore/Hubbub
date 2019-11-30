@@ -2,11 +2,7 @@ package controller
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
 	"strings"
-	"syscall"
-	"time"
 
 	"gihutb.com/jxmoore/hubbub/models"
 	v1 "k8s.io/api/core/v1"
@@ -22,24 +18,17 @@ func startWatcher(kubeClient *kubernetes.Clientset, config *models.Config, handl
 	// Create the watcher, nill listoptions should result in everything in NAMESPACE
 	fmt.Println("Starting watcher...")
 
-	timeout := int64(time.Second * 99999999) // bandaid, ideally we would handle this with a smaller number and handle it in podwatcher.
+	for {
 
-	watcher, err := kubeClient.CoreV1().Pods(config.Namespace).Watch(meta_v1.ListOptions{TimeoutSeconds: &timeout})
-	if err != nil {
-		return fmt.Errorf("Cannot create Pod event watcher, %v", err.Error())
+		watcher, err := kubeClient.CoreV1().Pods(config.Namespace).Watch(meta_v1.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("Cannot create Pod event watcher, %v", err.Error())
+		}
+
+		fmt.Println("Listening on the watch channel for pod changes...")
+		podWatcher(watcher, config, handler)
+
 	}
-
-	fmt.Println("Listening on the watch channel for pod changes...")
-	go podWatcher(watcher, config, handler)
-
-	sigterm := make(chan os.Signal, 1)
-	signal.Notify(sigterm, syscall.SIGTERM, syscall.SIGINT) // CTRL+C and term / exit
-
-	fmt.Println("Listening on sigterm channel for termination...\n\n")
-
-	//	blocking while we wait for either signal on the channel, the podWatcher is running on his own go routine
-	//  so this just ensures everything runs until a signal is sent on the sigterm channel
-	<-sigterm
 
 	return nil
 }
@@ -53,9 +42,10 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 	for {
 
 		select {
-		case e, ok := <-watcher.ResultChan():
+		case e, open := <-watcher.ResultChan():
 
-			if !ok {
+			if !open {
+				fmt.Println("Channel closed, recreating watcher...")
 				return
 			}
 
@@ -72,6 +62,7 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 			// ignore itself
 			if config.Self != "" {
 				if strings.Contains(strings.ToLower(pod.Name), strings.ToLower(config.Self)) {
+					fmt.Printf("Excluding pod %v\n", pod.Name)
 					continue
 				}
 			}
