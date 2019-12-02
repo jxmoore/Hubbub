@@ -8,16 +8,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 )
 
 // NotificationHandler is an interface that knows how to build out a notification and display to the
 // consumer of the message.
 type NotificationHandler interface {
 	Init(c *Config) error
-	BuildBody(Pod PodStatusInformation) (string, error)
-	Notify(msg string) error
+	BuildBody(Pod PodStatusInformation) ([]byte, error)
+	Notify(buffer []byte) error
 }
 
 // Slack is a struct that stores the Slack config, and the post body structs (SlackAttachments[SlackFields])
@@ -78,7 +78,7 @@ func (s *Slack) Init(c *Config) error {
 // BuildBody builds out the JSON payload that is used to post the message to slack.
 // It takes a struct of PodStatusInformation and with that it creates the SlackAttachment struct and marshels 's'
 // The marshalled 's' is returned to the caller.
-func (s Slack) BuildBody(Pod PodStatusInformation) (string, error) {
+func (s Slack) BuildBody(Pod PodStatusInformation) ([]byte, error) {
 
 	var reason string
 	color := "danger"
@@ -117,35 +117,30 @@ func (s Slack) BuildBody(Pod PodStatusInformation) (string, error) {
 		},
 	}
 
-	slackMsg, err := json.Marshal(s)
-	if err != nil {
-		return "", fmt.Errorf(err.Error())
-	}
+	slackMsg, _ := json.Marshal(s)
 
-	return string(slackMsg), nil
+	return slackMsg, nil
 
 }
 
 // BuildBody builds out the JSON payload that is used written to the screen when using STDOUT.
-func (s STDOUT) BuildBody(Pod PodStatusInformation) (string, error) {
+func (s STDOUT) BuildBody(Pod PodStatusInformation) ([]byte, error) {
 
-	msg, err := json.Marshal(Pod)
-	if err != nil {
-		return "", fmt.Errorf(err.Error())
-	}
-	return string(msg), nil
+	// marshal will error based on type and value, both of which we control tightly based on
+	// method signature. no reason to look for errors here
+	msg, _ := json.Marshal(Pod)
+
+	return msg, nil
 
 }
 
 // Notify is a method on Slack that posts the message to slack.
-func (s Slack) Notify(msg string) error {
+func (s Slack) Notify(buffer []byte) error {
 
 	// TODO:
 	// Add retry logic (assuming not a 40* result code but 500 etc..)
-	// Check response to ensure we receive back the 'ok' msg that slack replies with.
 
 	client := &http.Client{}
-	buffer := []byte(msg)
 
 	request, err := http.NewRequest("POST", s.WebHook, bytes.NewBuffer(buffer))
 	if err != nil {
@@ -176,9 +171,9 @@ func (s Slack) Notify(msg string) error {
 }
 
 // Notify prints the message to STDOUT.
-func (s STDOUT) Notify(msg string) error {
+func (s STDOUT) Notify(buffer []byte) error {
 
-	fmt.Println(msg)
+	fmt.Println(string(buffer))
 	return nil
-
+	
 }
