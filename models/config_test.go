@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+// configFile is a package wide Config{} used in all of the model tests as a base.
 var configFile = Config{
 	Namespace: "jomo",
 	STDOUT:    false,

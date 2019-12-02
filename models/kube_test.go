@@ -6,17 +6,17 @@ import (
 	"time"
 )
 
-// Pod is a dummy PodStatusInformation used in all of the test as the base.
+// Pod is a package wide PodStatusInformation used in all of the model tests as a base.
 var Pod = PodStatusInformation{
-	Namespace:     "jomo",
-	PodName:       "jomo",
-	ContainerName: "jomo",
-	Image:         "jomo",
+	Namespace:     "hubbub",
+	PodName:       "hubbub",
+	ContainerName: "hubbub",
+	Image:         "hubbub",
 	StartedAt:     time.Now(),
 	FinishedAt:    time.Now(),
 	ExitCode:      2,
-	Reason:        "jomo",
-	Message:       "jomo",
+	Reason:        "hubbub",
+	Message:       "hubbub",
 	Seen:          time.Now(),
 }
 
