@@ -1,4 +1,4 @@
-package controller
+package watcher
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 
 // StartWatcher creates the watch.Interface{} that we listen on, kicks off the podWatcher go routine and listens for termination on a
 // channel os.Signal. Its exported as its called
-func startWatcher(kubeClient *kubernetes.Clientset, config *models.Config, handler models.NotificationHandler) error {
+func StartWatcher(kubeClient *kubernetes.Clientset, config *models.Config, handler models.NotificationHandler) error {
 
 	// Create the watcher, nill listoptions should result in everything in NAMESPACE
 	fmt.Println("Starting watcher...")
@@ -92,8 +92,8 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 					podInformation.Load(pod)
 					podInformation.ConvertTime()
 
-					if ok := podInformation.IsNew(lastNotification); ok {
-						if err := newNotification(handler, podInformation); err != nil {
+					if ok := podInformation.IsNew(lastNotification, config.TimeCheck); ok {
+						if err := NewNotification(handler, podInformation); err != nil {
 							fmt.Println(err.Error()) // non termintating
 						} else {
 							lastNotification = podInformation
@@ -106,8 +106,8 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 					podInformation.Load(pod)
 					podInformation.ConvertTime()
 
-					if ok := podInformation.IsNew(lastNotification); ok {
-						if err := newNotification(handler, podInformation); err != nil {
+					if ok := podInformation.IsNew(lastNotification, config.TimeCheck); ok {
+						if err := NewNotification(handler, podInformation); err != nil {
 							fmt.Println(err.Error()) // non termintating
 						} else {
 							lastNotification = podInformation

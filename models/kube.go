@@ -2,7 +2,6 @@ package models
 
 import (
 	"reflect"
-	"strings"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -60,17 +59,20 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 				p.ContainerName = cst.Name
 				p.ExitCode = int(cst.State.Terminated.ExitCode)
 				p.Reason = cst.State.Terminated.Reason
+				p.Message = cst.State.Terminated.Message
 				break
 			}
 		}
 	}
+
+
 }
 
 // IsNew compares fields in p with the ones passed in on lastSeen. The purpose is to validate
 // that a instance of the struct is new, if it is a repeat or if its close enough to be a repeat.
 // This is done to cut down on redundant messages generated in Watch(). For e.g. a pod that terminates
 // shortly after startup due to an error in program.cs will generate constant alerts but we only want the first.
-func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation) bool {
+func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation, timeSince int) bool {
 
 	// assume not a failure
 	if p.Image == "" || p.ContainerName == "" || p.FinishedAt.IsZero() {
@@ -81,7 +83,7 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation) bool {
 	lastSeen.ConvertTime()
 
 	// its been at over 5 minutes, so its new yet again.
-	if ok := p.timeCheck(lastSeen); ok {
+	if ok := p.timeCheck(lastSeen, timeSince); ok {
 		return true
 	}
 
@@ -152,13 +154,13 @@ func (p PodStatusInformation) ExitCodeLookup() string {
 }
 
 // timeCheck checks to see if a pod was seen more than five minutes ago
-func (p PodStatusInformation) timeCheck(lastSeen PodStatusInformation) bool {
+func (p PodStatusInformation) timeCheck(lastSeen PodStatusInformation, timeSince int) bool {
 
 	newPod := p.Seen
 	LastPod := lastSeen.Seen
 	diff := newPod.Sub(LastPod)
 
-	if diff > (time.Minute * time.Duration(5)) {
+	if diff > (time.Minute * time.Duration(timeSince)) {
 		return true
 	}
 

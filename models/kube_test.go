@@ -27,22 +27,27 @@ func TestTimeCheck(t *testing.T) {
 	testSuite := map[string]struct {
 		expectedReturn bool
 		timeDiff       time.Duration
+		timeBack       int
 	}{
 		"timeCheck should return true #1": {
 			expectedReturn: true,
 			timeDiff:       time.Minute * -7,
+			timeBack:       2,
 		},
 		"timeCheck should return true #2": {
 			expectedReturn: true,
-			timeDiff:       time.Hour * -5,
+			timeDiff:       time.Hour * -1,
+			timeBack:       15,
 		},
 		"timeCheck should return false #1": {
 			expectedReturn: false,
 			timeDiff:       time.Hour * 1,
+			timeBack:       30,
 		},
 		"timeCheck should return false #2": {
 			expectedReturn: false,
 			timeDiff:       time.Minute * 50,
+			timeBack:       25,
 		},
 	}
 
@@ -51,7 +56,7 @@ func TestTimeCheck(t *testing.T) {
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 		fakePod := Pod
 		fakePod.Seen = time.Now().Add(testCase.timeDiff)
-		ok := Pod.timeCheck(fakePod)
+		ok := Pod.timeCheck(fakePod, testCase.timeBack)
 
 		if ok != testCase.expectedReturn {
 			t.Errorf("expected %v but received %v", testCase.expectedReturn, ok)
@@ -71,23 +76,23 @@ func TestExitCode(t *testing.T) {
 		PodInfo        PodStatusInformation
 	}{
 		"ExitCodeLookup should return Segmentation fault": {
-			expectedReturn: "Segmentation fault",
+			expectedReturn: "Segmentation fault.",
 			exitCode:       139,
 			PodInfo:        Pod,
 		},
 		"ExitCodeLookup should return Application Error": {
-			expectedReturn: "Application Error",
+			expectedReturn: "Application Error.",
 			exitCode:       1,
 			PodInfo:        Pod,
 		},
 		"ExitCodeLookup should return Container terminated": {
 			exitCode:       130,
-			expectedReturn: "Container terminated",
+			expectedReturn: "Container terminated.",
 			PodInfo:        Pod,
 		},
 		"ExitCodeLookup should return There was a error regardging...": {
 			exitCode:       126,
-			expectedReturn: "There was a error regardging permissions or the container could not be invoked",
+			expectedReturn: "There was a error regardging permissions or the container could not be invoked.",
 			PodInfo:        Pod,
 		},
 		"ExitCodeLookup should return nil": {
@@ -164,6 +169,7 @@ func TestIsNew(t *testing.T) {
 		finishedAt       time.Time
 		startedAt        time.Time
 		timeDif          time.Time
+		timeBack         int
 		exitCode         int
 		expectedResponse bool
 	}{
@@ -172,6 +178,7 @@ func TestIsNew(t *testing.T) {
 			continerName:     "hubbub",
 			podName:          "hubbub",
 			expectedResponse: true,
+			timeBack:         2,
 		},
 		"IsNew should return true due to the time difference": {
 			image:            Pod.Image,
@@ -179,6 +186,7 @@ func TestIsNew(t *testing.T) {
 			podName:          Pod.PodName,
 			seen:             time.Now().Add(time.Minute * -9),
 			expectedResponse: true,
+			timeBack:         2,
 		},
 		"IsNew should return false as pod and container names match": {
 			image:            Pod.Image,
@@ -188,15 +196,18 @@ func TestIsNew(t *testing.T) {
 			startedAt:        Pod.StartedAt,
 			seen:             Pod.Seen,
 			expectedResponse: false,
+			timeBack:         20,
 		},
 		"IsNew should return false as the structs are identical": {
 			expectedResponse: false,
+			timeBack:         12,
 		},
 		"IsNew should return false because of nil values": {
 			image:            "",
 			continerName:     "",
 			podName:          "",
 			expectedResponse: false,
+			timeBack:         12,
 		},
 		"IsNew should return false container name and exit code match": {
 			image:            "hubbub",
@@ -207,6 +218,7 @@ func TestIsNew(t *testing.T) {
 			startedAt:        Pod.StartedAt,
 			seen:             Pod.Seen,
 			expectedResponse: false,
+			timeBack:         21,
 		},
 	}
 
@@ -228,7 +240,7 @@ func TestIsNew(t *testing.T) {
 
 		fakePod.ConvertTime()
 
-		ok := Pod.IsNew(fakePod)
+		ok := Pod.IsNew(fakePod, testCase.timeBack)
 		if ok != testCase.expectedResponse {
 			t.Errorf("expected %v but received %v", testCase.expectedResponse, ok)
 		} else {

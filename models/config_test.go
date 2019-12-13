@@ -79,15 +79,15 @@ func TestConfigLoad(t *testing.T) {
 		file, err := os.OpenFile(testCase.filePath, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
 		if err != nil {
 			if os.IsExist(err) {
-				t.Errorf("Temp conf file already exists!")
+				t.Fatalf("Temp conf file already exists!")
 			} else {
-				t.Errorf("Error creating file %v", err.Error())
+				t.Fatalf("Error creating file %v", err.Error())
 			}
 		}
 
 		_, err = file.Write(content)
 		if err != nil {
-			t.Errorf("Error writing to %v %v", testCase.filePath, err.Error())
+			t.Fatalf("Error writing to %v %v", testCase.filePath, err.Error())
 		}
 
 		// no defer as it does not close the file quick enough if testCase.clean == true
@@ -111,7 +111,7 @@ func TestConfigLoad(t *testing.T) {
 	for _, testCase := range testSuite {
 		if testCase.clean {
 			if err := os.Remove(testCase.filePath); err != nil {
-				t.Errorf("Error on deletion  %v", err)
+				t.Logf("Error on deletion  %v", err) // tests should not fail on cleanup
 			}
 
 		}

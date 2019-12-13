@@ -175,5 +175,5 @@ func (s STDOUT) Notify(buffer []byte) error {
 
 	fmt.Println(string(buffer))
 	return nil
-	
+
 }

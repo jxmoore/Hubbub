@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 )
 
 // Config is the struct that contains all of the hubbub config
@@ -19,9 +20,10 @@ type Config struct {
 		User    string `json:"user,omitempty"`
 		Icon    string `json:"icon,omitempty"`
 	} `json:"slack"`
-	STDOUT bool   `json:"stdout,omitempty"`
-	Debug  bool   `json:"debug,omitempty"`
-	Self   string `json:"self,omitempty"`
+	STDOUT    bool   `json:"stdout,omitempty"`
+	Debug     bool   `json:"debug,omitempty"`
+	Self      string `json:"self,omitempty"`
+	TimeCheck int    `json:"time"`
 }
 
 // Load attempts to read the config file and unmarshel it into 'c'
@@ -51,11 +53,20 @@ func (c *Config) Load(configFile string) error {
 // assigned here if 'c' and the env variable is nil.
 func (c *Config) LoadEnvVars() {
 
+	var err error
 	if c.Namespace == "" && os.Getenv("NAMESAPCE") != "" {
 		c.Namespace = os.Getenv("NAMESAPCE")
 	}
 	if c.Slack.Channel == "" && os.Getenv("SLACK_CHANNEL") != "" {
 		c.Slack.Channel = os.Getenv("SLACK_CHANNEL")
+	}
+	if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") != "" {
+		c.TimeCheck, err = strconv.Atoi(os.Getenv("HUBBUB_TIMECHECK"))
+		if err != nil {
+			c.TimeCheck = 3
+		}
+	} else if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") == "" {
+		c.TimeCheck = 3
 	}
 	if c.Slack.WebHook == "" && os.Getenv("SLACK_WEBHOOK") != "" {
 		c.Slack.WebHook = os.Getenv("SLACK_WEBHOOK")

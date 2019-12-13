@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"gihutb.com/jxmoore/hubbub/controller"
+	"gihutb.com/jxmoore/hubbub/init"
 )
 
 var configPath = flag.String("c", "./config.json", "The path for the config file.")
@@ -14,8 +14,7 @@ func main() {
 
 	flag.Parse()
 
-	err := controller.BootStrap(*configPath, *envOnly)
-	if err != nil {
+	if err := init.BootStrap(*configPath, *envOnly); err != nil {
 		log.Fatal(err.Error())
 	}
 

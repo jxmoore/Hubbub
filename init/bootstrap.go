@@ -1,10 +1,12 @@
-package controller
+package init
 
 import (
 	"fmt"
 	"log"
 
 	"gihutb.com/jxmoore/hubbub/models"
+
+	"gihutb.com/jxmoore/hubbub/watcher"
 )
 
 // BootStrap is the init function for the project, it is responsible for parsing the config,
@@ -21,6 +23,7 @@ func BootStrap(path string, envOnly bool) error {
 			log.Fatal(err)
 		}
 	}
+
 	config.LoadEnvVars()
 
 	// I beleive that a NULL Namespace in Pods().Watch() will watch everything but because i havent tested it we just enforce it.
@@ -29,12 +32,6 @@ func BootStrap(path string, envOnly bool) error {
 	}
 
 	fmt.Printf("Config loaded... \n %v\n", config)
-
-	// pull kubernetes incluster clientinfo
-	client, err := getKubeClient()
-	if err != nil {
-		return fmt.Errorf(err.Error())
-	}
 
 	// Setup the notifications interface
 	var handler models.NotificationHandler
@@ -50,7 +47,13 @@ func BootStrap(path string, envOnly bool) error {
 		return fmt.Errorf("Error prepaing handler interface %v", err.Error())
 	}
 
-	startWatcher(client, config, handler)
+	// pull kubernetes incluster clientinfo
+	client, err := watcher.GetKubeClient()
+	if err != nil {
+		return fmt.Errorf(err.Error())
+	}
+
+	watcher.StartWatcher(client, config, handler)
 
 	return nil
 }

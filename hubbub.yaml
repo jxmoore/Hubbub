@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: hubbub
-        image: repo/hubbub:0.1
+        image: repo:5000/hubbub:0.1
         env:
         - name: AZMON_COLLECT_ENV
           value: "FALSE"             

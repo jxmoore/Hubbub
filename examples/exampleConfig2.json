@@ -1,0 +1,15 @@
+{
+	"namespace": "The Namespace to watch",
+	"Debug": true,
+	"Self": "The name of the POD running this container. Any pod containing this string will be excluded from notifications. ",
+	"slack": {
+		"webhook": "your webhook",
+        "channel": "#kubeTroubles",
+        "title":"The title of your slack post (default is defined in config.go)",
+        "user": "The user that this will post as (defaults to hubbub)",
+        "icon": "the users iscon for the post (default present in config.go)"
+        },
+        "labels":"not implemented",
+        "STDOUT": false,
+        "time": 5
+}

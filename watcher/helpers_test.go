@@ -1,4 +1,4 @@
-package controller
+package watcher
 
 import (
 	"gihutb.com/jxmoore/hubbub/models"
@@ -22,7 +22,7 @@ func ExampleNewNotification() {
 	p := pod
 	p.Namespace = "hubbub-Testin"
 
-	newNotification(handler, p)
+	NewNotification(handler, p)
 
 	// Output:
 	// {"Namespace":"hubbub-Testin","PodName":"hubbub","ContainerName":"hubbub","Image":"hubbub","StartedAt":"0001-01-01T00:00:00Z","FinishedAt":"0001-01-01T00:00:00Z","ExitCode":2,"Reason":"hubbub","Message":"hubbub","Seen":"0001-01-01T00:00:00Z"}
