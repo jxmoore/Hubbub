@@ -30,19 +30,29 @@ If building the application locally do so outside of $GOPATH and ensure that you
 ## Usage
 Update the yaml file supplied to create a service account, cluster role binding etc... ensure that all reside within the correct namespace and the image matches either the newest image for Hubbub or one you have built. If you have built this image yourself and supplied your own config you should be good to go.
 
-If you have *NOT* supplied a new config however and are using the Hubbub image you can :
+If you have **NOT** supplied a new config however and are using the Hubbub image you can :
 - Create a config, present it to the container as a mount and point to it via -c in the CMD
-- Use the -e flag and specify all settings as env variables, see `config.go` for more information on the enviroment variables used..
+- Use the -e flag and specify all settings as env variables, see `config.go` for more information on the enviroment variables used.
 
 ## Errors 
-- If you are receiving `Cannot create Pod event watcher....` in the console output ensure the service account, role and rolebinding are correct. It requires WATCH, GET and LIST permissions.
-- If there are no messages being posted in slack channel 'x' ensure your webhook is correct. Assuming it is be sure to check the console output. When sending the notification if no error is received the console should read 'Slack message sent...' along with the response body from slack, if there are errors these are written out as well.
-- If you think you are missing changes check the before mentioned IsNew method, it could be that the changes you expect are being deemed 'old'.
+- If you are receiving `Cannot create Pod event watcher....` in the console output : 
+  1. Ensure the service account, role and rolebinding were created and reside within the correct namespace. 
+  2. Remember Hubbub requires **WATCH, GET and LIST** permissions.
+- If there are no messages being posted in slack channel *X* : 
+  1. Ensure your webhook is correct.
+  2. Double check the channel if your supplying one in the config or env variables `channel` & `HUBBUB_CHANNEL` respectively. 
+  2. Check the console output. When Hubbub sends the notification if the response from slack is '*ok*' the console output should read '*Slack message sent...*', if the response body from slack does not match '*ok*' or there are errors the details will be written out as well.
+- If you think you are missing pod failure notifications: 
+  1. Enable the Debug option in the config. This will print every change found on the channel to STDOUT. 
+  2. Check the config value for `TimeCheck` or env variable `HUBBUB_TIMECHECK` if one is supplied, this value represents a time in minutes and if too large could mean repetead or new failures are being deemed old.
+  3. Check the before mentioned IsNew method, it could be that the changes you expect are being deemed 'old'.
 
 ### TODO 
-- Tests.
-- Parse the slack response body to ensure 'ok' is received back.
+- Tests. -- In Progress
+- Fancy up readme, include config example. -- In Progress
+- Update GetKubeClient() to allow using a local config for testing outside of a cluster.
+- Update comments - many of which are no longer applicable as the code has changed.
 - Implement the LabelSelectors.
-- ~The IsNew() should do a check on duration and ensure if 'x' time has passed the notification should be sent regardless.~
 - The 'value' field in the slack post should be exsposed in the config and should take Go templating syntax.
-- Fancy up readme, include config example
+- ~The IsNew() should do a check on duration and ensure if 'x' time has passed the notification should be sent regardless.~
+- ~Parse the slack response body to ensure 'ok' is received back.~
