@@ -54,11 +54,11 @@ func (c *Config) Load(configFile string) error {
 func (c *Config) LoadEnvVars() {
 
 	var err error
-	if c.Namespace == "" && os.Getenv("NAMESAPCE") != "" {
-		c.Namespace = os.Getenv("NAMESAPCE")
+	if c.Namespace == "" && os.Getenv("HUBBUB_NAMESAPCE") != "" {
+		c.Namespace = os.Getenv("HUBBUB_NAMESAPCE")
 	}
-	if c.Slack.Channel == "" && os.Getenv("SLACK_CHANNEL") != "" {
-		c.Slack.Channel = os.Getenv("SLACK_CHANNEL")
+	if c.Slack.Channel == "" && os.Getenv("HUBBUB_CHANNEL") != "" {
+		c.Slack.Channel = os.Getenv("HUBBUB_CHANNEL")
 	}
 	if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") != "" {
 		c.TimeCheck, err = strconv.Atoi(os.Getenv("HUBBUB_TIMECHECK"))
@@ -68,22 +68,22 @@ func (c *Config) LoadEnvVars() {
 	} else if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") == "" {
 		c.TimeCheck = 3
 	}
-	if c.Slack.WebHook == "" && os.Getenv("SLACK_WEBHOOK") != "" {
-		c.Slack.WebHook = os.Getenv("SLACK_WEBHOOK")
+	if c.Slack.WebHook == "" && os.Getenv("HUBBUB_WEBHOOK") != "" {
+		c.Slack.WebHook = os.Getenv("HUBBUB_WEBHOOK")
 	}
-	if c.Slack.User == "" && os.Getenv("SLACK_USER") != "" {
-		c.Slack.User = os.Getenv("SLACK_USER")
-	} else if c.Slack.User == "" && os.Getenv("SLACK_USER") == "" {
+	if c.Slack.User == "" && os.Getenv("HUBBUB_USER") != "" {
+		c.Slack.User = os.Getenv("HUBBUB_USER")
+	} else if c.Slack.User == "" && os.Getenv("HUBBUB_USER") == "" {
 		c.Slack.User = "Hubbub"
 	}
-	if c.Slack.Icon == "" && os.Getenv("SLACK_ICON") != "" {
-		c.Slack.Icon = os.Getenv("SLACK_ICON")
-	} else if c.Slack.Icon == "" && os.Getenv("SLACK_ICON") == "" {
+	if c.Slack.Icon == "" && os.Getenv("HUBBUB_ICON") != "" {
+		c.Slack.Icon = os.Getenv("HUBBUB_ICON")
+	} else if c.Slack.Icon == "" && os.Getenv("HUBBUB_ICON") == "" {
 		c.Slack.Icon = "https://www.sampalm.com/images/me.jpg"
 	}
-	if c.Slack.Title == "" && os.Getenv("SLACK_TITLE") != "" {
-		c.Slack.Title = os.Getenv("SLACK_TITLE")
-	} else if c.Slack.Title == "" && os.Getenv("SLACK_TITLE") == "" {
+	if c.Slack.Title == "" && os.Getenv("HUBBUB_TITLE") != "" {
+		c.Slack.Title = os.Getenv("HUBBUB_TITLE")
+	} else if c.Slack.Title == "" && os.Getenv("HUBBUB_TITLE") == "" {
 		c.Slack.Title = "There has been a pod error in production!"
 	}
 

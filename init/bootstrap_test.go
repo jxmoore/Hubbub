@@ -21,12 +21,12 @@ func TestBootStrap(t *testing.T) {
 
 	// Our env variables that will be passed in
 	envVariables := map[string]string{
-		"NAMESAPCE":     "hubbubTest",
-		"SLACK_CHANNEL": "#techGeneral",
-		"SLACK_WEBHOOK": "google.com",
-		"SLACK_USER":    "Hubub",
-		"SLACK_ICON":    "google.com/icon/happyfeet.png",
-		"SLACK_TITLE":   "A pod is suffering many woes!",
+		"HUBBUB_NAMESAPCE": "hubbubTest",
+		"HUBBUB_CHANNEL":   "#techGeneral",
+		"HUBBUB_WEBHOOK":   "google.com",
+		"HUBBUB_USER":      "Hubub",
+		"HUBBUB_ICON":      "google.com/icon/happyfeet.png",
+		"HUBBUB_TITLE":     "A pod is suffering many woes!",
 	}
 
 	testSuite := map[string]struct {

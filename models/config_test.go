@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -119,42 +120,49 @@ func TestConfigLoad(t *testing.T) {
 
 }
 
-// TestVarLoad() Creates the expected env variables found in LoadEnvVars() and then calls the method on an empty Config{}
-// assuming everything is working as expected the Config should contain the values for the env variables or the default values
-// based on the test case.
+// TestVarLoad() Sets a series of env variables based on the keys/values found in a map and then calls the LoadEnvVar() method on an empty Config{}.
+// Assuming everything is working as expected the Config should contain the values from the map or the default values based on the test case.
+//
+// This test is using reflect to loop over the fields in the struct, if they are strings we take the field name and add/update the key it matches in the map
+// with the value of that field in the struct (element.Interface()). While slightly more complex than the past test version, this version of the test is much more exstensible.
 func TestVarLoad(t *testing.T) {
 
+	var envVariables = map[string]string{
+		"NAMESAPCE": "hubbubTest",
+		"CHANNEL":   "#techGeneral",
+		"WEBHOOK":   "google.com",
+	}
+
+	// The fields match the suffix for a respective ENV variable. For example Namespace = HUBBUB_NAMESPACE
+	// during the test when os.SetEnv() is called the key is updated to include the prefix
 	testSuite := map[string]struct {
-		slackChannel string
-		webhook      string
-		user         string
-		icon         string
-		title        string
-		namespace    string
+		NAMESAPCE string
+		CHANNEL   string
+		WEBHOOK   string
+		USER      string
+		ICON      string
+		TITLE     string
 	}{
 		"Config should be populated with values derived from ENV variables #1": {
-			slackChannel: "hubbub",
-			webhook:      "hubbub",
-			user:         "hubbub",
-			icon:         "hubbub",
-			title:        "hubbub",
-			namespace:    "hubbub",
+			CHANNEL:   "#kubes",
+			NAMESAPCE: "hubbub",
+			WEBHOOK:   "slack.com/webhooks",
+			USER:      "jomo",
+			ICON:      "face.png",
+			TITLE:     "Somethings awry",
 		},
 		"Config should be populated with values derived from ENV variables #2": {
-			slackChannel: "alerts",
-			webhook:      "alerts",
-			user:         "alerts",
-			icon:         "alerts",
-			title:        "alerts",
-			namespace:    "alerts",
+			CHANNEL:   "#bub-Tub",
+			NAMESAPCE: "bubub",
+			WEBHOOK:   "slack.com/stuff/hook",
+			USER:      "jomo",
+			ICON:      "hubbubTest.png",
+			TITLE:     "Prod problems",
 		},
 		"Config should be populated with values derived from the defaults in LoadEnvVars #3": {
-			slackChannel: "alerts",
-			webhook:      "alerts",
-			user:         "",
-			icon:         "",
-			title:        "",
-			namespace:    "alerts",
+			CHANNEL:   "#hubbub",
+			NAMESAPCE: "default",
+			WEBHOOK:   "badURL",
 		},
 	}
 
@@ -163,42 +171,55 @@ func TestVarLoad(t *testing.T) {
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 
 		c := Config{}
-		os.Setenv("NAMESAPCE", testCase.namespace)
-		os.Setenv("SLACK_CHANNEL", testCase.slackChannel)
-		os.Setenv("SLACK_WEBHOOK", testCase.webhook)
-		os.Setenv("SLACK_USER", testCase.user)
-		os.Setenv("SLACK_ICON", testCase.icon)
-		os.Setenv("SLACK_TITLE", testCase.title)
+
+		envVars := envVariables
+		valOf := reflect.ValueOf(testCase)
+		typeOf := valOf.Type()
+
+		for i := 0; i < valOf.NumField(); i++ {
+			element := valOf.Field(i)
+			key := typeOf.Field(i).Name
+			if element.Type().String() == "string" {
+				envVars[key] = fmt.Sprintf("%v", element.Interface())
+			}
+		}
+
+		for k, v := range envVars {
+			// each env variable is prefixed with HUBBUB_
+			os.Setenv("HUBBUB_"+k, v)
+		}
+
 		c.LoadEnvVars()
 
-		if testCase.user == "" {
-			testCase.user = "Hubbub"
+		// the defaults from LoadEnvVars()
+		if envVariables["USER"] == "" {
+			envVariables["USER"] = "Hubbub"
 		}
-		if testCase.icon == "" {
-			testCase.icon = "https://www.sampalm.com/images/me.jpg"
+		if envVariables["ICON"] == "" {
+			envVariables["ICON"] = "https://www.sampalm.com/images/me.jpg"
 		}
-		if testCase.title == "" {
-			testCase.title = "There has been a pod error in production!"
+		if envVariables["TITLE"] == "" {
+			envVariables["TITLE"] = "There has been a pod error in production!"
 		}
 
-		if c.Slack.Channel != testCase.slackChannel {
-			t.Errorf("Expected the slack channel in the config to match the testcase %v but received %v", testCase.slackChannel, c.Slack.Channel)
+		// c should be populated from the env variables on LoadEnvVars(), so we cross check the fields in 'C' against our map values
+		if c.Slack.Channel != envVariables["CHANNEL"] {
+			t.Errorf("Expected the slack channel in the config to match the testcase '%v' but received '%v'", envVariables["CHANNEL"], c.Slack.Channel)
 		}
-		if c.Slack.WebHook != testCase.webhook {
-			t.Errorf("Expected the slack webhook in the config to match the testcase %v but received %v", testCase.webhook, c.Slack.WebHook)
+		if c.Slack.WebHook != envVariables["WEBHOOK"] {
+			t.Errorf("Expected the slack webhook in the config to match the testcase '%v' but received '%v'", envVariables["WEBHOOK"], c.Slack.WebHook)
 		}
-		if c.Namespace != testCase.namespace {
-			t.Errorf("Expected the namespace in the config to match the testcase %v but received %v", testCase.namespace, c.Namespace)
+		if c.Namespace != envVariables["NAMESAPCE"] {
+			t.Errorf("Expected the namespace in the config to match the testcase '%v' but received '%v'", envVariables["NAMESAPCE"], c.Namespace)
 		}
-		if testCase.user != c.Slack.User {
-			t.Errorf("Expected the slack user in the config to match the testcase %v but received %v", testCase.user, c.Slack.User)
+		if c.Slack.User != envVariables["USER"] {
+			t.Errorf("Expected the slack user in the config to match the testcase '%v' but received '%v'", envVariables["USER"], c.Slack.User)
 		}
-		if testCase.icon != c.Slack.Icon {
-			t.Errorf("Expected the slack icon in the config to match the testcase %v but received %v", testCase.icon, c.Slack.Icon)
+		if c.Slack.Icon != envVariables["ICON"] {
+			t.Errorf("Expected the slack icon in the config to match the testcase '%v' but received '%v'", envVariables["ICON"], c.Slack.Icon)
 		}
-		if testCase.title != c.Slack.Title {
-			t.Errorf("Expected the slack title message in the config to match the testcase %v but received %v", testCase.title, c.Slack.Title)
+		if c.Slack.Title != envVariables["TITLE"] {
+			t.Errorf("Expected the slack title message in the config to match the testcase '%v' but received '%v'", envVariables["TITLE"], c.Slack.Title)
 		}
 	}
-
 }

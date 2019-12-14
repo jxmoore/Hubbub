@@ -64,8 +64,6 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 			}
 		}
 	}
-
-
 }
 
 // IsNew compares fields in p with the ones passed in on lastSeen. The purpose is to validate
