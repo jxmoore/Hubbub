@@ -2,14 +2,13 @@
 
 <img src="images/Hubbub.png" align="right" title="Hubbub" width="175" height="175">
 
-Hubbub is a small application that runs locally inside of a Kubernetes cluster with a given service account, alerting on pod and container failures. It has no external dependencies outside of the STDLIB and Kubernetes packages.
+Hubbub is a small application that runs locally inside of a Kubernetes cluster with a given service account and watches a given namespace. If a pod failure is seen (SEGFAULT, Eviction etc..) in the namespace Hubbub is watching it will send a notification containing the information about the pod and container. It has no external dependencies outside of the STDLIB and Kubernetes packages.
 
-Hubbub runs indeffinatly and watches for pod and container failures until the application is terminated. If a pod failure is seen in the namespace Hubbub is watching it will send a notification  containing the information about the pod and container.
 
 <br><br>
 
 <p align="center">
-  <img src="images/eviction.PNG" align="middle" title="Eviction" width="625" height="175"   >
+  <img src="images/eviction.PNG" align="middle" title="Eviction" width="635" height="175"   >
 </p>
 
 
@@ -79,7 +78,7 @@ Once deployed you are off to the races! Hubbub should now be watching the namesp
 <br>
 
 <p align="center">
-  <img src="images/segfault.PNG" align="middle" title="Segfault" width="625" height="175"  >
+  <img src="images/segfault.PNG" align="middle" title="Segfault" width="635" height="175"  >
 </p>
 <br>
 
