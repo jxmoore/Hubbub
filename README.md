@@ -8,6 +8,7 @@ Hubbub is a small application that runs locally inside of a Kubernetes cluster w
 <br>
 
 <p align="center">
+	<br>
   <img src="images/eviction.PNG" align="middle" title="Eviction" width="635" height="175"   >
 </p>
 
