@@ -42,8 +42,8 @@ Once cloned you will want to create the config file to suite your needs, while t
 Save this file in the root of /Hubbub and call it config.json. With the json created, we can build the docker image by running the following :
 
 ```shell
- docker build . -t <yourtags>:<yourversion>
- docker push . -t <yourtags>:<yourversion>
+ docker build . -t <repoName>:<versionTag>
+ docker push . -t <repoName>:<versionTag>
 ```
 
 #### Deploy to Kubernetes 
