@@ -1,9 +1,8 @@
 {
-	"namespace": "Default",
-	"Debug": false,
+	"namespace": "YOUR NAMESPACE",
 	"Self": "Hubbub",
 	"slack": {
-		"webhook": "https://hooks.slack.com/services/webhook",
-		"channel": "#KubeAlerts"
+		"webhook": "YOUR WEBHOOK",
+		"channel": "#YOUR SLACK CHANNEL"
 		}
 }
