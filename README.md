@@ -85,12 +85,13 @@ Once deployed you are off to the races! Hubbub should now be watching the namesp
 
 
 ## Config
-There are two ways to tune and configure Hubbub, either through a configuration file `config.json` provided to the binary at runtime (via -c *FILEPATH*) or through enviroment variables. 
+There are two ways to tune and configure Hubbub, either through a configuration file `config.json` provided to the binary at runtime (via **-c FILEPATH**) or through enviroment variables. 
 <details><summary><b>The enviroment variables and what they control</b></summary>
 </details>
 <details><summary><b>The json fields and what they control</b></summary>
 </details>
 
+<br>
 
 >For an example of a configuration with all of the settings supplied see  <a href="examples/exampleConfig2.json"> /examples/exampleConfig2.json</a>.
 <br>
