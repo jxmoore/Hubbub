@@ -13,8 +13,6 @@ Hubbub is a small application that runs locally inside of a Kubernetes cluster w
 </p>
 
 
-
-<br><br>
 ## Installation and setup
 At this time Hubbub is not hosted in any public image repository so you will need to build the image yourself and then deploy it to a kubernetes cluster. The following steps will walk you through that process.
 > If using slack you will also need a slack webhook. This readme does not go into the specifics for creating one, if you need assistance please see <a href="https://api.slack.com/messaging/webhooks">this page.</a>
