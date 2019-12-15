@@ -21,11 +21,6 @@ spec:
         env:
         - name: AZMON_COLLECT_ENV
           value: "FALSE"             
-      dnsConfig:
-        options:
-          - name: single-request-reopen
-      imagePullSecrets:
-      - name: artcred
       serviceAccountName: hubbub
 ---
 kind: ClusterRole
