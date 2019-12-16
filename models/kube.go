@@ -69,7 +69,8 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 // IsNew compares fields in p with the ones passed in on lastSeen. The purpose is to validate
 // that a instance of the struct is new, if it is a repeat or if its close enough to be a repeat.
 // This is done to cut down on redundant messages generated in Watch(). For e.g. a pod that terminates
-// shortly after startup due to an error in program.cs will generate constant alerts but we only want the first.
+// shortly after startup due to an error in program.cs and restarts will generate constant alerts as
+// it constantly goes up and down but we only want the first (or one thats older than 'X').
 func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation, timeSince int) bool {
 
 	// assume not a failure
@@ -80,7 +81,7 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation, timeSince int
 	p.ConvertTime()
 	lastSeen.ConvertTime()
 
-	// its been at over 5 minutes, so its new yet again.
+	// Check to see if its been over 'x' minutes, if so its new yet again.
 	if ok := p.timeCheck(lastSeen, timeSince); ok {
 		return true
 	}
@@ -117,7 +118,11 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation, timeSince int
 	return true
 }
 
-// ConvertTime converts all of the times found in p to local (EST).
+// ConvertTime converts all of the times found in p to local (EST). This is in place because some
+// users host their Kubeernetes clusters in cloud enviroments where the local timezone does not match
+// the end users.
+//
+// TODO : The location should be exsposed in the config allowing other time zones.
 func (p *PodStatusInformation) ConvertTime() {
 
 	zone, err := time.LoadLocation("America/New_York")
@@ -151,7 +156,9 @@ func (p PodStatusInformation) ExitCodeLookup() string {
 
 }
 
-// timeCheck checks to see if a pod was seen more than five minutes ago
+// timeCheck checks to see if a pod was seen more than 'x' minutes ago. This is acheived
+// by diffing the 'seen' values in both struct ('p' and 'lastSeen') and then seeing if it
+// exceeds the timeSince value provided in the config.
 func (p PodStatusInformation) timeCheck(lastSeen PodStatusInformation, timeSince int) bool {
 
 	newPod := p.Seen
