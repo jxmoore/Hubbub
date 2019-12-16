@@ -53,20 +53,38 @@ func (c *Config) Load(configFile string) error {
 // assigned here if 'c' and the env variable is nil.
 func (c *Config) LoadEnvVars() {
 
-	var err error
 	if c.Namespace == "" && os.Getenv("HUBBUB_NAMESAPCE") != "" {
 		c.Namespace = os.Getenv("HUBBUB_NAMESAPCE")
 	}
-	if c.Slack.Channel == "" && os.Getenv("HUBBUB_CHANNEL") != "" {
-		c.Slack.Channel = os.Getenv("HUBBUB_CHANNEL")
+	if c.Self == "" && os.Getenv("HUBBUB_SELF") != "" {
+		c.Self = os.Getenv("HUBBUB_SELF")
+	} else if c.Self == "" && os.Getenv("HUBBUB_SELF") == "" {
+		c.Self = "Hubbub"
+	}
+	if !c.Debug && os.Getenv("HUBBUB_DEBUG") != "" {
+		debug, err := strconv.ParseBool(os.Getenv("HUBBUB_DEBUG"))
+		if err == nil {
+			c.Debug = debug
+		}
+	}
+	if !c.STDOUT && os.Getenv("HUBBUB_STDOUT") != "" {
+		stdEnv, err := strconv.ParseBool(os.Getenv("HUBBUB_STDOUT"))
+		if err == nil {
+			c.STDOUT = stdEnv
+		}
 	}
 	if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") != "" {
-		c.TimeCheck, err = strconv.Atoi(os.Getenv("HUBBUB_TIMECHECK"))
+		timeEnv, err := strconv.Atoi(os.Getenv("HUBBUB_TIMECHECK"))
 		if err != nil {
 			c.TimeCheck = 3
+		} else {
+			c.TimeCheck = timeEnv
 		}
 	} else if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") == "" {
 		c.TimeCheck = 3
+	}
+	if c.Slack.Channel == "" && os.Getenv("HUBBUB_CHANNEL") != "" {
+		c.Slack.Channel = os.Getenv("HUBBUB_CHANNEL")
 	}
 	if c.Slack.WebHook == "" && os.Getenv("HUBBUB_WEBHOOK") != "" {
 		c.Slack.WebHook = os.Getenv("HUBBUB_WEBHOOK")

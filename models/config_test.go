@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"testing"
 )
 
@@ -20,6 +21,7 @@ var configFile = Config{
 func TestConfigLoad(t *testing.T) {
 
 	testSuite := map[string]struct {
+		// Values for the config
 		namespace string
 		webhook   string
 		channel   string
@@ -27,6 +29,7 @@ func TestConfigLoad(t *testing.T) {
 		Debug     bool
 		Self      string
 		filePath  string
+		timeCheck int
 		// Delete the config files or let them persist on disk
 		clean bool
 	}{
@@ -38,6 +41,7 @@ func TestConfigLoad(t *testing.T) {
 			Debug:     true,
 			filePath:  "./testConf1.json",
 			Self:      "Default",
+			timeCheck: 6,
 			clean:     true,
 		},
 		"Created config with Secret namespace should be identical to loaded config": {
@@ -48,6 +52,7 @@ func TestConfigLoad(t *testing.T) {
 			Self:      "infosec",
 			Debug:     true,
 			filePath:  "./testConf2.json",
+			timeCheck: 18,
 			clean:     true,
 		},
 		"Created config with testo namespace should be identical to loaded config": {
@@ -56,6 +61,7 @@ func TestConfigLoad(t *testing.T) {
 			channel:   "#random",
 			Self:      "stuff",
 			STDOUT:    true,
+			timeCheck: 3,
 			Debug:     false,
 			filePath:  "./testConf3.json",
 			clean:     true,
@@ -69,8 +75,10 @@ func TestConfigLoad(t *testing.T) {
 		configFile.Namespace = testCase.namespace
 		configFile.Slack.WebHook = testCase.webhook
 		configFile.Slack.Channel = testCase.channel
+		configFile.Self = testCase.Self
 		configFile.STDOUT = testCase.STDOUT
 		configFile.Debug = testCase.Debug
+		configFile.TimeCheck = testCase.timeCheck
 
 		content, err := json.Marshal(configFile)
 		if err != nil {
@@ -123,8 +131,8 @@ func TestConfigLoad(t *testing.T) {
 // TestVarLoad() Sets a series of env variables based on the keys/values found in a map and then calls the LoadEnvVar() method on an empty Config{}.
 // Assuming everything is working as expected the Config should contain the values from the map or the default values based on the test case.
 //
-// This test is using reflect to loop over the fields in the struct, if they are strings we take the field name and add/update the key it matches in the map
-// with the value of that field in the struct (element.Interface()). While slightly more complex than the past test version, this version of the test is much more exstensible.
+// This test is using reflect to loop over the fields in the struct and using their name/values to create enviroment variables.
+// While slightly more complex than the past test version, this version of the test is much more exstensible.
 func TestVarLoad(t *testing.T) {
 
 	var envVariables = map[string]string{
@@ -142,6 +150,10 @@ func TestVarLoad(t *testing.T) {
 		USER      string
 		ICON      string
 		TITLE     string
+		SELF      string
+		TIMECHECK string
+		DEBUG     string
+		STDOUT    string
 	}{
 		"Config should be populated with values derived from ENV variables #1": {
 			CHANNEL:   "#kubes",
@@ -150,6 +162,10 @@ func TestVarLoad(t *testing.T) {
 			USER:      "jomo",
 			ICON:      "face.png",
 			TITLE:     "Somethings awry",
+			SELF:      "man",
+			TIMECHECK: "8",
+			DEBUG:     "true",
+			STDOUT:    "true",
 		},
 		"Config should be populated with values derived from ENV variables #2": {
 			CHANNEL:   "#bub-Tub",
@@ -158,6 +174,10 @@ func TestVarLoad(t *testing.T) {
 			USER:      "jomo",
 			ICON:      "hubbubTest.png",
 			TITLE:     "Prod problems",
+			SELF:      "jakey",
+			TIMECHECK: "15",
+			DEBUG:     "false",
+			STDOUT:    "false",
 		},
 		"Config should be populated with values derived from the defaults in LoadEnvVars #3": {
 			CHANNEL:   "#hubbub",
@@ -195,31 +215,59 @@ func TestVarLoad(t *testing.T) {
 		if envVariables["USER"] == "" {
 			envVariables["USER"] = "Hubbub"
 		}
+		if envVariables["SELF"] == "" {
+			envVariables["SELF"] = "Hubbub"
+		}
 		if envVariables["ICON"] == "" {
 			envVariables["ICON"] = "https://www.sampalm.com/images/me.jpg"
 		}
 		if envVariables["TITLE"] == "" {
 			envVariables["TITLE"] = "There has been a pod error in production!"
 		}
+		if envVariables["TIMECHECK"] == "" {
+			envVariables["TIMECHECK"] = "3"
+		}
+		if envVariables["DEBUG"] == "" {
+			envVariables["DEBUG"] = "false"
+		}
+		if envVariables["STDOUT"] == "" {
+			envVariables["STDOUT"] = "false"
+		}
+		stdEnv, _ := strconv.ParseBool(envVariables["STDOUT"])
+		debug, _ := strconv.ParseBool(envVariables["DEBUG"])
+		timeEnv, _ := strconv.Atoi(envVariables["TIMECHECK"])
 
 		// c should be populated from the env variables on LoadEnvVars(), so we cross check the fields in 'C' against our map values
 		if c.Slack.Channel != envVariables["CHANNEL"] {
-			t.Errorf("Expected the slack channel in the config to match the testcase '%v' but received '%v'", envVariables["CHANNEL"], c.Slack.Channel)
+			t.Errorf("Expected the slack channel in the config to match the testcase value '%v' but received '%v'", envVariables["CHANNEL"], c.Slack.Channel)
 		}
 		if c.Slack.WebHook != envVariables["WEBHOOK"] {
-			t.Errorf("Expected the slack webhook in the config to match the testcase '%v' but received '%v'", envVariables["WEBHOOK"], c.Slack.WebHook)
+			t.Errorf("Expected the slack webhook in the config to match the testcase value '%v' but received '%v'", envVariables["WEBHOOK"], c.Slack.WebHook)
 		}
 		if c.Namespace != envVariables["NAMESAPCE"] {
-			t.Errorf("Expected the namespace in the config to match the testcase '%v' but received '%v'", envVariables["NAMESAPCE"], c.Namespace)
+			t.Errorf("Expected the namespace in the config to match the testcase value '%v' but received '%v'", envVariables["NAMESAPCE"], c.Namespace)
 		}
 		if c.Slack.User != envVariables["USER"] {
-			t.Errorf("Expected the slack user in the config to match the testcase '%v' but received '%v'", envVariables["USER"], c.Slack.User)
+			t.Errorf("Expected the slack user in the config to match the testcase value '%v' but received '%v'", envVariables["USER"], c.Slack.User)
 		}
 		if c.Slack.Icon != envVariables["ICON"] {
-			t.Errorf("Expected the slack icon in the config to match the testcase '%v' but received '%v'", envVariables["ICON"], c.Slack.Icon)
+			t.Errorf("Expected the slack icon in the config to match the testcase value '%v' but received '%v'", envVariables["ICON"], c.Slack.Icon)
 		}
 		if c.Slack.Title != envVariables["TITLE"] {
-			t.Errorf("Expected the slack title message in the config to match the testcase '%v' but received '%v'", envVariables["TITLE"], c.Slack.Title)
+			t.Errorf("Expected the slack title message in the config to match the testcase value '%v' but received '%v'", envVariables["TITLE"], c.Slack.Title)
+		}
+		if c.Self != envVariables["SELF"] {
+			t.Errorf("Expected the SELF value in the config to match the testcase value '%v' but received '%v'", envVariables["SELF"], c.Self)
+		}
+
+		if c.TimeCheck != timeEnv {
+			t.Errorf("Expected the TimeCheck value in the config to match the testcase value '%v' but received '%v'", timeEnv, c.TimeCheck)
+		}
+		if c.STDOUT != stdEnv {
+			t.Errorf("Expected the STDOUT value in the config to match the testcase value '%v' but received '%v'", stdEnv, c.STDOUT)
+		}
+		if c.Debug != debug {
+			t.Errorf("Expected the Debug value in the config to match the testcase value '%v' but received '%v'", debug, c.Debug)
 		}
 	}
 }
