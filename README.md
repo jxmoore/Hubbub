@@ -136,11 +136,12 @@ If you do not have the go command on your system, you need to [Install Go](http:
 <br>
 
 ### TODO
-- Tests. -- In Progress
-- Fancy up readme, include config example. -- In Progress
+- Tests. -- In Progress.
+- Readme config portion needs to be completed. -- In Progress.
 - Update GetKubeClient() to allow using a local config for testing outside of a cluster.
-- Update comments - many of which are no longer applicable as the code has changed.
+- Update all comments -- In Progress.
 - Implement the LabelSelectors.
 - The 'value' field in the slack post should be exsposed in the config and should take Go templating syntax.
 - ~The IsNew() should do a check on duration and ensure if 'x' time has passed the notification should be sent regardless.~
 - ~Parse the slack response body to ensure 'ok' is received back.~
+- ~Fancy up readme~

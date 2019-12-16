@@ -14,6 +14,8 @@ var configFile = models.Config{
 	STDOUT:    false,
 }
 
+// TestBootStrap tests the BootStrap() function that acts as Hubbubs init. Due to the way the KubeConfig is pulled currently it will error out when pulling the credentials hence the knownIssue variable.
+// This should change in the very near future. 
 func TestBootStrap(t *testing.T) {
 
 	// Currently no way of testing locally with kubeconfig so this will fail with the following :
