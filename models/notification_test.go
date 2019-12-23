@@ -144,12 +144,12 @@ func TestBuildBody(t *testing.T) {
 
 		bodyHandler.Init(&c)
 		p.ConvertTime()
-		msgInBytes, _ := bodyHandler.BuildBody(p)
+		msgInBytes := BuildBody(bodyHandler, p)
 
 		if testCase.notificationType == "stdout" {
 
 			pCheck := PodStatusInformation{}
-			json.Unmarshal(msgInBytes, &pCheck)
+			json.Unmarshal(msgInBytes.body, &pCheck)
 
 			// avoiding deepequal here due to issues with timestamps
 			if p.Namespace == pCheck.Namespace && p.ContainerName == pCheck.ContainerName && p.Reason == pCheck.Reason &&
@@ -166,7 +166,7 @@ func TestBuildBody(t *testing.T) {
 				p.PodName, p.ContainerName, p.Image)
 
 			slackBody := Slack{}
-			json.Unmarshal(msgInBytes, &slackBody)
+			json.Unmarshal(msgInBytes.body, &slackBody)
 			msg := slackBody.Attachment[0].Fallback
 
 			if slackBody.Attachment[0].Color != "danger" {
@@ -208,10 +208,11 @@ func TestBuildBody(t *testing.T) {
 // ExampleSTDOUTNotify is an Example that verifies that the notify function
 // on STDOUT is printing the correct byte array to STDOUT
 func ExampleSTDOUTNotify() {
+
 	h := handler
 	h = new(STDOUT)
-
-	h.Notify([]byte("hello"))
+	nDetails := notificationDetails{body: []byte("hello")}
+	h.Notify(nDetails)
 
 	// Output:
 	// hello

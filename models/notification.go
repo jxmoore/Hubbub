@@ -7,17 +7,32 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 )
 
 // NotificationHandler is an interface that knows how to build out a notification and display to the
 // consumer of the message.
 type NotificationHandler interface {
 	Init(c *Config) error
-	BuildBody(Pod PodStatusInformation) ([]byte, error)
-	Notify(buffer []byte) error
+	Notify(notificationDetails) error
+}
+
+// notificationDetails is an struct that holds fields used by the the a specific notifications Notify method. For example
+// body is used for slack and STDOUT/Default whereas Properties is used by applicationinsights.
+type notificationDetails struct {
+	body       []byte
+	properties map[string]string
+}
+ 
+// ApplicationInsights is a struct that holds the information needed to send a customEvent via
+// the Notify() method.
+type ApplicationInsights struct {
+	eventTitle string
+	key        string
+	client     appinsights.TelemetryClient
 }
 
 // Slack is a struct that stores the Slack config, and the post body structs (SlackAttachments[SlackFields])
@@ -53,6 +68,15 @@ func (s *STDOUT) Init(c *Config) error {
 	return nil
 }
 
+// Init copies the key from the config into the 'a' and creates the Application Insights Client inside of 'a'
+func (a *ApplicationInsights) Init(c *Config) error {
+
+	a.key = c.Notification.AppInsightsKey
+	a.client = appinsights.NewTelemetryClient(c.Notification.AppInsightsKey)
+	return nil
+
+}
+
 // Init loads the slack config from the *Config into 's'
 // An error is returned if one or more of these values is abscent
 func (s *Slack) Init(c *Config) error {
@@ -75,74 +99,26 @@ func (s *Slack) Init(c *Config) error {
 	return nil
 }
 
-// BuildBody builds out the JSON payload that is used to post the message to slack.
-// It takes a struct of PodStatusInformation and with that it creates the SlackAttachment struct and marshels 's'
-// The marshalled 's' is returned to the caller.
-func (s Slack) BuildBody(Pod PodStatusInformation) ([]byte, error) {
+// Notify submits the custom event in application insights
+func (a ApplicationInsights) Notify(details notificationDetails) error {
 
-	var reason string
-	color := "danger"
-	errorDetails := strconv.Itoa(Pod.ExitCode)
-	errInfo := Pod.ExitCodeLookup()
+	event := appinsights.NewEventTelemetry(a.eventTitle)
+	event.Properties = details.properties
+	a.client.Track(event)
 
-	if errInfo != "" {
-		errorDetails = fmt.Sprintf("Error code : %v `%v`", errorDetails, errInfo)
-	} else {
-		errorDetails = fmt.Sprintf("Error code : %v\n", errorDetails)
-	}
-
-	if Pod.Reason != "" && Pod.Message != "" {
-		reason = fmt.Sprintf("Failure reason received : `%v - %v`", Pod.Reason, Pod.Message)
-	} else if Pod.Message != "" {
-		reason = fmt.Sprintf("Failure reason received : `%v`", Pod.Message)
-	} else if Pod.Reason != "" {
-		reason = fmt.Sprintf("Failure reason received : `%v`", Pod.Reason)
-	} else {
-		reason = "Unable to determine the reason for the failure."
-	}
-
-	Pod.ConvertTime()
-
-	// time.Format returns a string, to get out of having another field in the struct we format it here in line.
-	msg := fmt.Sprintf("The pod : *%v* has encountered an error.\n\nThe container is : *%v*\nWhich is running image : *%v*.\nThe error information is below.\n\n\n"+
-		"> %v\n> %v\n> The pod ran from : *%v until %v*", Pod.PodName, Pod.ContainerName, Pod.Image, reason, errorDetails,
-		Pod.StartedAt.Format(time.Stamp), Pod.FinishedAt.Format(time.Stamp))
-
-	s.Attachment = []SlackAttachments{
-		SlackAttachments{
-			Fallback: msg,
-			Color:    color,
-			Title:    s.Title,
-			Field:    []SlackFields{SlackFields{Value: msg}},
-		},
-	}
-
-	slackMsg, _ := json.Marshal(s)
-
-	return slackMsg, nil
-
-}
-
-// BuildBody builds out the JSON payload that is used written to the screen when using STDOUT.
-func (s STDOUT) BuildBody(Pod PodStatusInformation) ([]byte, error) {
-
-	// marshal will error based on type and value, both of which we control tightly based on
-	// method signature. no reason to look for errors here
-	msg, _ := json.Marshal(Pod)
-
-	return msg, nil
+	return nil
 
 }
 
 // Notify is a method on Slack that posts the message to slack.
-func (s Slack) Notify(buffer []byte) error {
+func (s Slack) Notify(details notificationDetails) error {
 
 	// TODO:
 	// Add retry logic (assuming not a 40* result code but 500 etc..)
 
 	client := &http.Client{}
-
-	request, err := http.NewRequest("POST", s.WebHook, bytes.NewBuffer(buffer))
+	buffer := bytes.NewBuffer(details.body)
+	request, err := http.NewRequest("POST", s.WebHook, buffer)
 	if err != nil {
 		return errors.New(err.Error())
 	}
@@ -171,9 +147,69 @@ func (s Slack) Notify(buffer []byte) error {
 }
 
 // Notify prints the message to STDOUT.
-func (s STDOUT) Notify(buffer []byte) error {
+func (s STDOUT) Notify(details notificationDetails) error {
 
-	fmt.Println(string(buffer))
+	fmt.Println(string(details.body))
 	return nil
+
+}
+
+func BuildBody(handler NotificationHandler, Pod PodStatusInformation) notificationDetails {
+
+	nDetails := notificationDetails{}
+	var err error
+
+	switch handler.(type) {
+	case *ApplicationInsights:
+		Pod.ConvertTime()
+		nDetails.properties["Pod"] = Pod.PodName
+		nDetails.properties["Container"] = Pod.ContainerName
+		nDetails.properties["Namespace"] = Pod.Namespace
+		nDetails.properties["Image"] = Pod.Image
+		nDetails.properties["RunTime"] = fmt.Sprintf("%v until %v", Pod.StartedAt, Pod.FinishedAt)
+		nDetails.properties["FailureReason"] = podErrorReason(Pod)
+		nDetails.properties["ExitCode"] = podErrorCode(Pod)
+		return nDetails
+	case *Slack:
+		s := handler.(*Slack)
+		nDetails.body, err = BuildSlackBody(*s, Pod)
+		if err != nil {
+			fmt.Println("Error building slack body")
+		}
+		return nDetails
+	default:
+		nDetails.body, _ = json.Marshal(Pod)
+		return nDetails
+	}
+}
+
+// BuildSlackBody builds out the JSON payload that is used to post the message to slack.
+// It takes a struct of PodStatusInformation and with that it creates the SlackAttachment struct and marshels 's'
+// The marshalled 's' is returned to the caller.
+func BuildSlackBody(s Slack, Pod PodStatusInformation) ([]byte, error) {
+
+	color := "danger"
+	errorDetails := podErrorCode(Pod)
+	reason := podErrorReason(Pod)
+
+	Pod.ConvertTime()
+
+	// time.Format returns a string, to get out of having another field in the struct we format it here in line.
+	msg := fmt.Sprintf("The pod : *%v* has encountered an error.\n\nThe container is : *%v*\nWhich is running image : *%v*.\nThe error information is below.\n\n\n"+
+		"> %v\n> %v\n> The pod ran from : *%v until %v*", Pod.PodName, Pod.ContainerName, Pod.Image, reason, errorDetails,
+		Pod.StartedAt.Format(time.Stamp), Pod.FinishedAt.Format(time.Stamp))
+
+	s.Attachment = []SlackAttachments{
+		SlackAttachments{
+			Fallback: msg,
+			Color:    color,
+			Title:    s.Title,
+			Field:    []SlackFields{SlackFields{Value: msg}},
+		},
+	}
+
+	slackMsg, _ := json.Marshal(s)
+
+	return slackMsg, nil
 
 }

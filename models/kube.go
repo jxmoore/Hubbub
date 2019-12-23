@@ -1,7 +1,9 @@
 package models
 
 import (
+	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -170,5 +172,35 @@ func (p PodStatusInformation) timeCheck(lastSeen PodStatusInformation, timeSince
 	}
 
 	return false
+
+}
+
+// podErrorReason returns a well formated string that uses p.Reason and p.Message depending upon
+// their values.
+func podErrorReason(p PodStatusInformation) string {
+
+	if p.Reason != "" && p.Message != "" {
+		return fmt.Sprintf("Failure reason received : `%v - %v`", p.Reason, p.Message)
+	} else if Pod.Message != "" {
+		return fmt.Sprintf("Failure reason received : `%v`", p.Message)
+	} else if Pod.Reason != "" {
+		return fmt.Sprintf("Failure reason received : `%v`", p.Reason)
+	} else {
+		return "Unable to determine the reason for the failure."
+	}
+
+}
+
+// podErroCode returns a concat of the errorcode and its details if found as a string
+func podErrorCode(p PodStatusInformation) string {
+
+	errorDetails := strconv.Itoa(Pod.ExitCode)
+	errInfo := p.ExitCodeLookup()
+
+	if errInfo != "" {
+		return fmt.Sprintf("Error code : %v `%v`", errorDetails, errInfo)
+	}
+
+	return fmt.Sprintf("Error code : %v\n", errorDetails)
 
 }

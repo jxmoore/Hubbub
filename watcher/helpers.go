@@ -30,13 +30,8 @@ func GetKubeClient() (*kubernetes.Clientset, error) {
 // NewNotification calls the methods on the interface that process a notification.
 func NewNotification(handler models.NotificationHandler, pod models.PodStatusInformation) error {
 
-	msg, err := handler.BuildBody(pod)
-	if err != nil {
-		return fmt.Errorf("Error building body %v", err.Error())
-	}
-
-	err = handler.Notify(msg)
-	if err != nil {
+	msg := models.BuildBody(handler, pod)
+	if err := handler.Notify(msg); err != nil {
 		return fmt.Errorf("Error sending notification %v", err.Error())
 	}
 
