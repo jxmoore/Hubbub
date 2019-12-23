@@ -7,23 +7,24 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Config is the struct that contains all of the hubbub config
 type Config struct {
-	Namespace string `json:"namespace,omitempty"`
-	Labels    string `json:"labels,omitempty"` // TODO, currently not implemented
-	Slack     struct {
-		WebHook string `json:"webhook"`
-		Channel string `json:"channel"`
-		Title   string `json:"title,omitempty"`
-		User    string `json:"user,omitempty"`
-		Icon    string `json:"icon,omitempty"`
-	} `json:"slack"`
-	STDOUT    bool   `json:"stdout,omitempty"`
-	Debug     bool   `json:"debug,omitempty"`
-	Self      string `json:"self,omitempty"`
-	TimeCheck int    `json:"time"`
+	Namespace    string `json:"namespace,omitempty"`
+	Labels       string `json:"labels,omitempty"` // TODO, currently not implemented
+	Debug        bool   `json:"debug,omitempty"`
+	Self         string `json:"self,omitempty"`
+	TimeCheck    int    `json:"time"`
+	Notification struct {
+		Handler      string `json:"type"`
+		SlackWebHook string `json:"slackWebhook"`
+		SlackChannel string `json:"slackChannel"`
+		SlackTitle   string `json:"slackTitle,omitempty"`
+		SlackUser    string `json:"slackUser,omitempty"`
+		SlackIcon    string `json:"slackIcon,omitempty"`
+	} `json:"notifications"`
 }
 
 // Load attempts to read the config file and unmarshel it into 'c'
@@ -42,6 +43,7 @@ func (c *Config) Load(configFile string) error {
 	}
 
 	if len(content) != 0 {
+		c.Notification.Handler = strings.ToLower(c.Notification.Handler)
 		return json.Unmarshal(content, c)
 	}
 
@@ -67,12 +69,6 @@ func (c *Config) LoadEnvVars() {
 			c.Debug = debug
 		}
 	}
-	if !c.STDOUT && os.Getenv("HUBBUB_STDOUT") != "" {
-		stdEnv, err := strconv.ParseBool(os.Getenv("HUBBUB_STDOUT"))
-		if err == nil {
-			c.STDOUT = stdEnv
-		}
-	}
 	if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") != "" {
 		timeEnv, err := strconv.Atoi(os.Getenv("HUBBUB_TIMECHECK"))
 		if err != nil {
@@ -83,26 +79,26 @@ func (c *Config) LoadEnvVars() {
 	} else if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") == "" {
 		c.TimeCheck = 3
 	}
-	if c.Slack.Channel == "" && os.Getenv("HUBBUB_CHANNEL") != "" {
-		c.Slack.Channel = os.Getenv("HUBBUB_CHANNEL")
+	if c.Notification.SlackChannel == "" && os.Getenv("HUBBUB_CHANNEL") != "" {
+		c.Notification.SlackChannel = os.Getenv("HUBBUB_CHANNEL")
 	}
-	if c.Slack.WebHook == "" && os.Getenv("HUBBUB_WEBHOOK") != "" {
-		c.Slack.WebHook = os.Getenv("HUBBUB_WEBHOOK")
+	if c.Notification.SlackWebHook == "" && os.Getenv("HUBBUB_WEBHOOK") != "" {
+		c.Notification.SlackWebHook = os.Getenv("HUBBUB_WEBHOOK")
 	}
-	if c.Slack.User == "" && os.Getenv("HUBBUB_USER") != "" {
-		c.Slack.User = os.Getenv("HUBBUB_USER")
-	} else if c.Slack.User == "" && os.Getenv("HUBBUB_USER") == "" {
-		c.Slack.User = "Hubbub"
+	if c.Notification.SlackUser == "" && os.Getenv("HUBBUB_USER") != "" {
+		c.Notification.SlackUser = os.Getenv("HUBBUB_USER")
+	} else if c.Notification.SlackUser == "" && os.Getenv("HUBBUB_USER") == "" {
+		c.Notification.SlackUser = "Hubbub"
 	}
-	if c.Slack.Icon == "" && os.Getenv("HUBBUB_ICON") != "" {
-		c.Slack.Icon = os.Getenv("HUBBUB_ICON")
-	} else if c.Slack.Icon == "" && os.Getenv("HUBBUB_ICON") == "" {
-		c.Slack.Icon = "https://www.sampalm.com/images/me.jpg"
+	if c.Notification.SlackIcon == "" && os.Getenv("HUBBUB_ICON") != "" {
+		c.Notification.SlackIcon = os.Getenv("HUBBUB_ICON")
+	} else if c.Notification.SlackIcon == "" && os.Getenv("HUBBUB_ICON") == "" {
+		c.Notification.SlackIcon = "https://www.sampalm.com/images/me.jpg"
 	}
-	if c.Slack.Title == "" && os.Getenv("HUBBUB_TITLE") != "" {
-		c.Slack.Title = os.Getenv("HUBBUB_TITLE")
-	} else if c.Slack.Title == "" && os.Getenv("HUBBUB_TITLE") == "" {
-		c.Slack.Title = "There has been a pod error in production!"
+	if c.Notification.SlackTitle == "" && os.Getenv("HUBBUB_TITLE") != "" {
+		c.Notification.SlackTitle = os.Getenv("HUBBUB_TITLE")
+	} else if c.Notification.SlackTitle == "" && os.Getenv("HUBBUB_TITLE") == "" {
+		c.Notification.SlackTitle = "There has been a pod error in production!"
 	}
 
 }

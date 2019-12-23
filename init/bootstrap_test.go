@@ -11,7 +11,6 @@ import (
 // configFile is a package wide Config{}
 var configFile = models.Config{
 	Namespace: "jomo",
-	STDOUT:    false,
 }
 
 // TestBootStrap tests the BootStrap() function that acts as Hubbubs init. Due to the way the KubeConfig is pulled currently it will error out when pulling the credentials hence the knownIssue variable.
@@ -105,9 +104,8 @@ func TestBootStrap(t *testing.T) {
 
 		} else {
 			configFile.Namespace = testCase.namespace
-			configFile.Slack.WebHook = testCase.webhook
-			configFile.Slack.Channel = testCase.channel
-			configFile.STDOUT = testCase.STDOUT
+			configFile.Notification.SlackWebHook = testCase.webhook
+			configFile.Notification.SlackChannel = testCase.channel
 			configFile.Debug = testCase.Debug
 
 			content, err := json.Marshal(configFile)

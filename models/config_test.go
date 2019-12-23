@@ -12,7 +12,6 @@ import (
 // configFile is a package wide Config{} used in all of the model tests as a base.
 var configFile = Config{
 	Namespace: "jomo",
-	STDOUT:    false,
 }
 
 // TestLoadConfig tests the Load() method on Config.
@@ -25,7 +24,6 @@ func TestConfigLoad(t *testing.T) {
 		namespace string
 		webhook   string
 		channel   string
-		STDOUT    bool
 		Debug     bool
 		Self      string
 		filePath  string
@@ -37,7 +35,6 @@ func TestConfigLoad(t *testing.T) {
 			namespace: "Default",
 			webhook:   "https://github.com/jxmoore/Hubbub/tree/develop/models",
 			channel:   "#Tech_General",
-			STDOUT:    false,
 			Debug:     true,
 			filePath:  "./testConf1.json",
 			Self:      "Default",
@@ -48,7 +45,6 @@ func TestConfigLoad(t *testing.T) {
 			namespace: "Secret",
 			webhook:   "https://duckduckgo.com",
 			channel:   "#Tech_InfoSec",
-			STDOUT:    false,
 			Self:      "infosec",
 			Debug:     true,
 			filePath:  "./testConf2.json",
@@ -60,7 +56,6 @@ func TestConfigLoad(t *testing.T) {
 			webhook:   "https://bitbucket.com",
 			channel:   "#random",
 			Self:      "stuff",
-			STDOUT:    true,
 			timeCheck: 3,
 			Debug:     false,
 			filePath:  "./testConf3.json",
@@ -73,10 +68,9 @@ func TestConfigLoad(t *testing.T) {
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 
 		configFile.Namespace = testCase.namespace
-		configFile.Slack.WebHook = testCase.webhook
-		configFile.Slack.Channel = testCase.channel
+		configFile.Notification.SlackWebHook = testCase.webhook
+		configFile.Notification.SlackChannel = testCase.channel
 		configFile.Self = testCase.Self
-		configFile.STDOUT = testCase.STDOUT
 		configFile.Debug = testCase.Debug
 		configFile.TimeCheck = testCase.timeCheck
 
@@ -233,38 +227,33 @@ func TestVarLoad(t *testing.T) {
 		if envVariables["STDOUT"] == "" {
 			envVariables["STDOUT"] = "false"
 		}
-		stdEnv, _ := strconv.ParseBool(envVariables["STDOUT"])
 		debug, _ := strconv.ParseBool(envVariables["DEBUG"])
 		timeEnv, _ := strconv.Atoi(envVariables["TIMECHECK"])
 
 		// c should be populated from the env variables on LoadEnvVars(), so we cross check the fields in 'C' against our map values
-		if c.Slack.Channel != envVariables["CHANNEL"] {
-			t.Errorf("Expected the slack channel in the config to match the testcase value '%v' but received '%v'", envVariables["CHANNEL"], c.Slack.Channel)
+		if c.Notification.SlackChannel != envVariables["CHANNEL"] {
+			t.Errorf("Expected the slack channel in the config to match the testcase value '%v' but received '%v'", envVariables["CHANNEL"], c.Notification.SlackChannel)
 		}
-		if c.Slack.WebHook != envVariables["WEBHOOK"] {
-			t.Errorf("Expected the slack webhook in the config to match the testcase value '%v' but received '%v'", envVariables["WEBHOOK"], c.Slack.WebHook)
+		if c.Notification.SlackWebHook != envVariables["WEBHOOK"] {
+			t.Errorf("Expected the slack webhook in the config to match the testcase value '%v' but received '%v'", envVariables["WEBHOOK"], c.Notification.SlackWebHook)
 		}
 		if c.Namespace != envVariables["NAMESAPCE"] {
 			t.Errorf("Expected the namespace in the config to match the testcase value '%v' but received '%v'", envVariables["NAMESAPCE"], c.Namespace)
 		}
-		if c.Slack.User != envVariables["USER"] {
-			t.Errorf("Expected the slack user in the config to match the testcase value '%v' but received '%v'", envVariables["USER"], c.Slack.User)
+		if c.Notification.SlackUser != envVariables["USER"] {
+			t.Errorf("Expected the slack user in the config to match the testcase value '%v' but received '%v'", envVariables["USER"], c.Notification.SlackUser)
 		}
-		if c.Slack.Icon != envVariables["ICON"] {
-			t.Errorf("Expected the slack icon in the config to match the testcase value '%v' but received '%v'", envVariables["ICON"], c.Slack.Icon)
+		if c.Notification.SlackIcon != envVariables["ICON"] {
+			t.Errorf("Expected the slack icon in the config to match the testcase value '%v' but received '%v'", envVariables["ICON"], c.Notification.SlackIcon)
 		}
-		if c.Slack.Title != envVariables["TITLE"] {
-			t.Errorf("Expected the slack title message in the config to match the testcase value '%v' but received '%v'", envVariables["TITLE"], c.Slack.Title)
+		if c.Notification.SlackTitle != envVariables["TITLE"] {
+			t.Errorf("Expected the slack title message in the config to match the testcase value '%v' but received '%v'", envVariables["TITLE"], c.Notification.SlackTitle)
 		}
 		if c.Self != envVariables["SELF"] {
 			t.Errorf("Expected the SELF value in the config to match the testcase value '%v' but received '%v'", envVariables["SELF"], c.Self)
 		}
-
 		if c.TimeCheck != timeEnv {
 			t.Errorf("Expected the TimeCheck value in the config to match the testcase value '%v' but received '%v'", timeEnv, c.TimeCheck)
-		}
-		if c.STDOUT != stdEnv {
-			t.Errorf("Expected the STDOUT value in the config to match the testcase value '%v' but received '%v'", stdEnv, c.STDOUT)
 		}
 		if c.Debug != debug {
 			t.Errorf("Expected the Debug value in the config to match the testcase value '%v' but received '%v'", debug, c.Debug)

@@ -35,12 +35,11 @@ func BootStrap(path string, envOnly bool) error {
 
 	// Setup the notifications interface
 	var handler models.NotificationHandler
-	if config.Slack.WebHook == "" && config.STDOUT {
-		fmt.Println("Using STDOUT...")
-		handler = new(models.STDOUT)
-	} else {
+	if config.Notification.Handler == "slack" {
 		fmt.Println("Using Slack...")
 		handler = new(models.Slack)
+	} else {
+		handler = new(models.STDOUT)
 	}
 
 	if err := handler.Init(config); err != nil {

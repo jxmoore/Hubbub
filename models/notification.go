@@ -57,15 +57,15 @@ func (s *STDOUT) Init(c *Config) error {
 // An error is returned if one or more of these values is abscent
 func (s *Slack) Init(c *Config) error {
 
-	s.Title = c.Slack.Title
-	s.Icon = c.Slack.Icon
-	s.User = c.Slack.User
+	s.Title = c.Notification.SlackTitle
+	s.Icon = c.Notification.SlackIcon
+	s.User = c.Notification.SlackUser
 
-	if c.Slack.WebHook != "" {
-		s.WebHook = c.Slack.WebHook
+	if c.Notification.SlackWebHook != "" {
+		s.WebHook = c.Notification.SlackWebHook
 	}
-	if c.Slack.Channel != "" {
-		s.Channel = c.Slack.Channel
+	if c.Notification.SlackChannel != "" {
+		s.Channel = c.Notification.SlackChannel
 	}
 
 	if s.WebHook == "" || s.Channel == "" {

@@ -49,8 +49,8 @@ func TestNotificationInit(t *testing.T) {
 		}
 
 		fakeConf := configFile // from config_test.go
-		fakeConf.Slack.WebHook = testCase.webhook
-		fakeConf.Slack.Channel = testCase.channel
+		fakeConf.Notification.SlackWebHook = testCase.webhook
+		fakeConf.Notification.SlackChannel = testCase.channel
 
 		if err := notification.Init(&fakeConf); err != nil {
 			if testCase.expectedResponse != err.Error() {
@@ -68,10 +68,10 @@ func TestBuildBody(t *testing.T) {
 
 	// Theses are dummy values that will be present on the returned json body
 	// when calling (s *Slack) BuildBody
-	configFile.Slack.User = "hubbub"
-	configFile.Slack.Icon = "https://www.sampalm.com/images/me.jpg"
-	configFile.Slack.Channel = "Testing"
-	configFile.Slack.WebHook = "https://www.sampalm.com/images/me.jpg"
+	configFile.Notification.SlackUser = "hubbub"
+	configFile.Notification.SlackIcon = "https://www.sampalm.com/images/me.jpg"
+	configFile.Notification.SlackChannel = "Testing"
+	configFile.Notification.SlackWebHook = "https://www.sampalm.com/images/me.jpg"
 
 	testSuite := map[string]struct {
 		notificationType string
@@ -139,8 +139,8 @@ func TestBuildBody(t *testing.T) {
 		}
 
 		c := configFile
-		c.Slack.WebHook = "google.com"
-		c.Slack.Title = "Oh no!"
+		c.Notification.SlackWebHook = "google.com"
+		c.Notification.SlackTitle = "Oh no!"
 
 		bodyHandler.Init(&c)
 		p.ConvertTime()
@@ -170,35 +170,35 @@ func TestBuildBody(t *testing.T) {
 			msg := slackBody.Attachment[0].Fallback
 
 			if slackBody.Attachment[0].Color != "danger" {
-				t.Errorf("Expected slack.attachment.color == danger but received %v", slackBody.Attachment[0].Color)
+				t.Errorf("Expected Notification.Slackattachment.color == danger but received %v", slackBody.Attachment[0].Color)
 			}
 
-			if slackBody.Attachment[0].Title != c.Slack.Title {
-				t.Errorf("Expected slack.attachment.title to match the title supplied in the handler init but received %v", slackBody.Attachment[0].Title)
+			if slackBody.Attachment[0].Title != c.Notification.SlackTitle {
+				t.Errorf("Expected Notification.Slackattachment.title to match the title supplied in the handler init but received %v", slackBody.Attachment[0].Title)
 			}
 
 			if !strings.Contains(msg, errorDetails) {
-				t.Errorf("Expected slack.attachment.fallback to contain the error details but the string %v was not found", errorDetails)
+				t.Errorf("Expected Notification.Slackattachment.fallback to contain the error details but the string %v was not found", errorDetails)
 			}
 
 			if !strings.Contains(msg, podMsg) {
-				t.Errorf("Expected slack.attachment.fallback to contain the predefined message containg the pod and container name but it was not found.\nThe message was %v", podMsg)
+				t.Errorf("Expected Notification.Slackattachment.fallback to contain the predefined message containg the pod and container name but it was not found.\nThe message was %v", podMsg)
 			}
 
 			if p.Reason != "" && !strings.Contains(msg, p.Reason) {
-				t.Errorf("Expected slack.attachment.fallback to contain the supplied pod failure reason '%v' but it was not found", testCase.podReason)
+				t.Errorf("Expected Notification.Slackattachment.fallback to contain the supplied pod failure reason '%v' but it was not found", testCase.podReason)
 			}
 
 			if p.Message != "" && !strings.Contains(msg, p.Message) {
-				t.Errorf("Expected slack.attachment.fallback to contain the supplied pod failure message '%v' but it was not found", testCase.podMessage)
+				t.Errorf("Expected Notification.Slackattachment.fallback to contain the supplied pod failure message '%v' but it was not found", testCase.podMessage)
 			}
 
 			if !strings.Contains(msg, p.StartedAt.Format(time.Stamp)) || !strings.Contains(msg, p.FinishedAt.Format(time.Stamp)) {
-				t.Errorf("Expected slack.attachment.fallback to contain the correct time stamps '%v' and '%v' but one or more of these were not found", p.StartedAt.Format(time.Stamp), p.FinishedAt.Format(time.Stamp))
+				t.Errorf("Expected Notification.Slackattachment.fallback to contain the correct time stamps '%v' and '%v' but one or more of these were not found", p.StartedAt.Format(time.Stamp), p.FinishedAt.Format(time.Stamp))
 			}
 
 			if msg != slackBody.Attachment[0].Field[0].Value {
-				t.Errorf("Expected slack.attachment.fallback to match slack.attachment.field.value\n %v != %v", slackBody.Attachment[0].Fallback, slackBody.Attachment[0].Field[0].Value)
+				t.Errorf("Expected Notification.Slackattachment.fallback to match Notification.Slackattachment.field.value\n %v != %v", slackBody.Attachment[0].Fallback, slackBody.Attachment[0].Field[0].Value)
 			}
 		}
 
