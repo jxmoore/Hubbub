@@ -12,18 +12,22 @@ import (
 
 // Config is the struct that contains all of the hubbub config
 type Config struct {
-	Namespace    string `json:"namespace,omitempty"`
-	Labels       string `json:"labels,omitempty"` // TODO, currently not implemented
-	Debug        bool   `json:"debug,omitempty"`
-	Self         string `json:"self,omitempty"`
+	Namespace    string `json:"namespace"`
+	Labels       string `json:"labels"` // TODO, currently not implemented
+	Debug        bool   `json:"debug"`
+	Self         string `json:"self"`
 	TimeCheck    int    `json:"time"`
 	Notification struct {
-		Handler      string `json:"type"`
-		SlackWebHook string `json:"slackWebhook"`
-		SlackChannel string `json:"slackChannel"`
+		Handler string `json:"type"`
+		// Slack specifics
+		SlackWebHook string `json:"slackWebhook,omitempty"`
+		SlackChannel string `json:"slackChannel,omitempty"`
 		SlackTitle   string `json:"slackTitle,omitempty"`
 		SlackUser    string `json:"slackUser,omitempty"`
 		SlackIcon    string `json:"slackIcon,omitempty"`
+		// Application Insights
+		AppInsightsKey   string `json:"instrumentationKey,omitempty"`
+		CustomEventTitle string `json:"customEventTitle.omitempty"`
 	} `json:"notifications"`
 }
 
