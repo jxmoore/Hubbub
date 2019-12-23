@@ -144,7 +144,7 @@ func TestBuildBody(t *testing.T) {
 
 		bodyHandler.Init(&c)
 		p.ConvertTime()
-		msgInBytes := BuildBody(bodyHandler, p)
+		msgInBytes, _ := BuildBody(bodyHandler, p)
 
 		if testCase.notificationType == "stdout" {
 
@@ -211,7 +211,7 @@ func ExampleSTDOUTNotify() {
 
 	h := handler
 	h = new(STDOUT)
-	nDetails := notificationDetails{body: []byte("hello")}
+	nDetails := NotificationDetails{body: []byte("hello")}
 	h.Notify(nDetails)
 
 	// Output:

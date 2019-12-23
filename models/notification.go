@@ -17,16 +17,16 @@ import (
 // consumer of the message.
 type NotificationHandler interface {
 	Init(c *Config) error
-	Notify(notificationDetails) error
+	Notify(NotificationDetails) error
 }
 
-// notificationDetails is an struct that holds fields used by the the a specific notifications Notify method. For example
+// NotificationDetails is an struct that holds fields used by the the a specific notifications Notify method. For example
 // body is used for slack and STDOUT/Default whereas Properties is used by applicationinsights.
-type notificationDetails struct {
+type NotificationDetails struct {
 	body       []byte
 	properties map[string]string
 }
- 
+
 // ApplicationInsights is a struct that holds the information needed to send a customEvent via
 // the Notify() method.
 type ApplicationInsights struct {
@@ -100,7 +100,7 @@ func (s *Slack) Init(c *Config) error {
 }
 
 // Notify submits the custom event in application insights
-func (a ApplicationInsights) Notify(details notificationDetails) error {
+func (a ApplicationInsights) Notify(details NotificationDetails) error {
 
 	event := appinsights.NewEventTelemetry(a.eventTitle)
 	event.Properties = details.properties
@@ -111,7 +111,7 @@ func (a ApplicationInsights) Notify(details notificationDetails) error {
 }
 
 // Notify is a method on Slack that posts the message to slack.
-func (s Slack) Notify(details notificationDetails) error {
+func (s Slack) Notify(details NotificationDetails) error {
 
 	// TODO:
 	// Add retry logic (assuming not a 40* result code but 500 etc..)
@@ -147,40 +147,41 @@ func (s Slack) Notify(details notificationDetails) error {
 }
 
 // Notify prints the message to STDOUT.
-func (s STDOUT) Notify(details notificationDetails) error {
+func (s STDOUT) Notify(details NotificationDetails) error {
 
 	fmt.Println(string(details.body))
 	return nil
 
 }
 
-func BuildBody(handler NotificationHandler, Pod PodStatusInformation) notificationDetails {
+// BuildBody is an exported function that takes a NotificationHandler interface and a PodStatusInformation Struct and uses these to build out a notificationDetails
+// struct. The return value (notificationDetails) is used by all structs ({struct}.Notify()) that satisfy the NotificationHandeler interface.
+func BuildBody(handler NotificationHandler, Pod PodStatusInformation) (NotificationDetails, error) {
 
-	nDetails := notificationDetails{}
-	var err error
+	nDetails := NotificationDetails{}
 
-	switch handler.(type) {
-	case *ApplicationInsights:
-		Pod.ConvertTime()
-		nDetails.properties["Pod"] = Pod.PodName
-		nDetails.properties["Container"] = Pod.ContainerName
-		nDetails.properties["Namespace"] = Pod.Namespace
-		nDetails.properties["Image"] = Pod.Image
-		nDetails.properties["RunTime"] = fmt.Sprintf("%v until %v", Pod.StartedAt, Pod.FinishedAt)
-		nDetails.properties["FailureReason"] = podErrorReason(Pod)
-		nDetails.properties["ExitCode"] = podErrorCode(Pod)
-		return nDetails
-	case *Slack:
-		s := handler.(*Slack)
+	if s, ok := handler.(*Slack); ok {
+		var err error
 		nDetails.body, err = BuildSlackBody(*s, Pod)
 		if err != nil {
-			fmt.Println("Error building slack body")
+			return nDetails, fmt.Errorf("There was an error creating the body for the slack post. %v", err.Error())
 		}
-		return nDetails
-	default:
-		nDetails.body, _ = json.Marshal(Pod)
-		return nDetails
+		return nDetails, nil
 	}
+
+	Pod.ConvertTime()
+	nDetails.body, _ = json.Marshal(Pod)
+
+	nDetails.properties["Pod"] = Pod.PodName
+	nDetails.properties["Container"] = Pod.ContainerName
+	nDetails.properties["Namespace"] = Pod.Namespace
+	nDetails.properties["Image"] = Pod.Image
+	nDetails.properties["RunTime"] = fmt.Sprintf("%v until %v", Pod.StartedAt, Pod.FinishedAt)
+	nDetails.properties["FailureReason"] = podErrorReason(Pod)
+	nDetails.properties["ExitCode"] = podErrorCode(Pod)
+
+	return nDetails, nil
+
 }
 
 // BuildSlackBody builds out the JSON payload that is used to post the message to slack.
