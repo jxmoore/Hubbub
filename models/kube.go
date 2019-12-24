@@ -181,9 +181,9 @@ func podErrorReason(p PodStatusInformation) string {
 
 	if p.Reason != "" && p.Message != "" {
 		return fmt.Sprintf("Failure reason received : `%v - %v`", p.Reason, p.Message)
-	} else if Pod.Message != "" {
+	} else if p.Message != "" {
 		return fmt.Sprintf("Failure reason received : `%v`", p.Message)
-	} else if Pod.Reason != "" {
+	} else if p.Reason != "" {
 		return fmt.Sprintf("Failure reason received : `%v`", p.Reason)
 	} else {
 		return "Unable to determine the reason for the failure."
@@ -194,7 +194,7 @@ func podErrorReason(p PodStatusInformation) string {
 // podErroCode returns a concat of the errorcode and its details if found as a string
 func podErrorCode(p PodStatusInformation) string {
 
-	errorDetails := strconv.Itoa(Pod.ExitCode)
+	errorDetails := strconv.Itoa(p.ExitCode)
 	errInfo := p.ExitCodeLookup()
 
 	if errInfo != "" {

@@ -18,10 +18,16 @@ var handler NotificationHandler
 func TestNotificationInit(t *testing.T) {
 
 	testSuite := map[string]struct {
+		// config.notifications.type :
 		notificationType string
+		// slack specific
+		webhook string
+		channel string
+		// app insights specific
+		eventTitle string
+		key        string
+		// the expected response (error)
 		expectedResponse string
-		webhook          string
-		channel          string
 	}{
 		"(s *Slack) Init() will return nil": {
 			notificationType: "slack",
@@ -35,6 +41,15 @@ func TestNotificationInit(t *testing.T) {
 			notificationType: "slack",
 			expectedResponse: "Missing slack token or channel",
 		},
+		"(s *ApplicationInsights) Init() will throw an error due to missing fields": {
+			notificationType: "ai",
+			expectedResponse: "missing instrumentation key",
+		},
+		"(s *ApplicationInsights) Init() will return nil": {
+			notificationType: "ai",
+			eventTitle:       "#broTalk",
+			key:              "as8932OsdAS89DQR54FDas8932OsdAS89DQR54FD",
+		},
 	}
 
 	for testName, testCase := range testSuite {
@@ -42,19 +57,24 @@ func TestNotificationInit(t *testing.T) {
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 
 		notification := handler
-		notification = new(STDOUT)
 
 		if testCase.notificationType == "slack" {
 			notification = new(Slack)
+		} else if testCase.notificationType == "ai" {
+			notification = new(ApplicationInsights)
+		} else {
+			notification = new(STDOUT)
 		}
 
 		fakeConf := configFile // from config_test.go
 		fakeConf.Notification.SlackWebHook = testCase.webhook
 		fakeConf.Notification.SlackChannel = testCase.channel
+		fakeConf.Notification.AppInsightsKey = testCase.key
+		fakeConf.Notification.CustomEventTitle = testCase.eventTitle
 
 		if err := notification.Init(&fakeConf); err != nil {
 			if testCase.expectedResponse != err.Error() {
-				t.Errorf("Expected an error code of %v and received %v", testCase.expectedResponse, err)
+				t.Fatalf("Expected an error code of %v and received %v", testCase.expectedResponse, err)
 			} else {
 				t.Logf("Received the correct error response from Init()")
 			}
@@ -88,7 +108,7 @@ func TestBuildBody(t *testing.T) {
 		"The unmarshelled json from '(s Slack) BuildBody' should contain the expected strings - NIL podMessage": {
 			notificationType: "slack",
 			exitCode:         130,
-			podReason:        "missing config",
+			podReason:        "Stuffs",
 			podMessage:       "",
 		},
 		"The unmarshelled json from '(s Slack) BuildBody' should contain the expected strings - NIL podReason": {
@@ -121,7 +141,7 @@ func TestBuildBody(t *testing.T) {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 
-		p := Pod // from kube_test.go
+		p := TestPod // from kube_test.go
 		p.Namespace = "default"
 		p.Image = "hubbub"
 		p.PodName = "hubbubTestPod-" + testCase.notificationType
@@ -178,7 +198,7 @@ func TestBuildBody(t *testing.T) {
 			}
 
 			if !strings.Contains(msg, errorDetails) {
-				t.Errorf("Expected Notification.Slackattachment.fallback to contain the error details but the string %v was not found", errorDetails)
+				t.Errorf("Expected Notification.Slackattachment.fallback to contain the error details but the string %v was not found.", errorDetails)
 			}
 
 			if !strings.Contains(msg, podMsg) {
@@ -186,7 +206,7 @@ func TestBuildBody(t *testing.T) {
 			}
 
 			if p.Reason != "" && !strings.Contains(msg, p.Reason) {
-				t.Errorf("Expected Notification.Slackattachment.fallback to contain the supplied pod failure reason '%v' but it was not found", testCase.podReason)
+				t.Errorf("Expected Notification.Slackattachment.fallback to contain the supplied pod failure reason '%v' but it was not found. %v", testCase.podReason, msg)
 			}
 
 			if p.Message != "" && !strings.Contains(msg, p.Message) {

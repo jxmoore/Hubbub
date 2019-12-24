@@ -7,7 +7,7 @@ import (
 )
 
 // Pod is a package wide PodStatusInformation used in all of the model tests as a base.
-var Pod = PodStatusInformation{
+var TestPod = PodStatusInformation{
 	Namespace:     "hubbub",
 	PodName:       "hubbub",
 	ContainerName: "hubbub",
@@ -54,9 +54,9 @@ func TestTimeCheck(t *testing.T) {
 	for testName, testCase := range testSuite {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
-		fakePod := Pod
+		fakePod := TestPod
 		fakePod.Seen = time.Now().Add(testCase.timeDiff)
-		ok := Pod.timeCheck(fakePod, testCase.timeBack)
+		ok := TestPod.timeCheck(fakePod, testCase.timeBack)
 
 		if ok != testCase.expectedReturn {
 			t.Errorf("expected %v but received %v", testCase.expectedReturn, ok)
@@ -78,33 +78,33 @@ func TestExitCode(t *testing.T) {
 		"ExitCodeLookup should return Segmentation fault": {
 			expectedReturn: "Segmentation fault.",
 			exitCode:       139,
-			PodInfo:        Pod,
+			PodInfo:        TestPod,
 		},
 		"ExitCodeLookup should return Application Error": {
 			expectedReturn: "Application Error.",
 			exitCode:       1,
-			PodInfo:        Pod,
+			PodInfo:        TestPod,
 		},
 		"ExitCodeLookup should return Container terminated": {
 			exitCode:       130,
 			expectedReturn: "Container terminated.",
-			PodInfo:        Pod,
+			PodInfo:        TestPod,
 		},
 		"ExitCodeLookup should return There was a error regardging...": {
 			exitCode:       126,
 			expectedReturn: "There was a error regardging permissions or the container could not be invoked.",
-			PodInfo:        Pod,
+			PodInfo:        TestPod,
 		},
 		"ExitCodeLookup should return nil": {
 			exitCode: 893,
-			PodInfo:  Pod,
+			PodInfo:  TestPod,
 		},
 	}
 
 	for testName, testCase := range testSuite {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
-		fakePod := Pod
+		fakePod := TestPod
 		fakePod.ExitCode = testCase.exitCode
 		response := fakePod.ExitCodeLookup()
 
@@ -127,17 +127,17 @@ func TestConvertTime(t *testing.T) {
 	}{
 		"ConvertTime should EST #1": {
 			expectedZone: "EST",
-			PodInfo:      Pod,
+			PodInfo:      TestPod,
 			timeOffset:   time.Minute * 19,
 		},
 		"ConvertTime should EST #2": {
 			expectedZone: "EST",
-			PodInfo:      Pod,
+			PodInfo:      TestPod,
 			timeOffset:   time.Hour * 1,
 		},
 		"ConvertTime should EST #3": {
 			expectedZone: "EST",
-			PodInfo:      Pod,
+			PodInfo:      TestPod,
 			timeOffset:   time.Hour * 8,
 		},
 	}
@@ -145,7 +145,7 @@ func TestConvertTime(t *testing.T) {
 	for testName, testCase := range testSuite {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
-		fakePod := Pod
+		fakePod := TestPod
 		fakePod.ConvertTime()
 		dateArray := strings.Fields(fakePod.StartedAt.String())
 
@@ -181,20 +181,20 @@ func TestIsNew(t *testing.T) {
 			timeBack:         2,
 		},
 		"IsNew should return true due to the time difference": {
-			image:            Pod.Image,
-			continerName:     Pod.ContainerName,
-			podName:          Pod.PodName,
+			image:            TestPod.Image,
+			continerName:     TestPod.ContainerName,
+			podName:          TestPod.PodName,
 			seen:             time.Now().Add(time.Minute * -9),
 			expectedResponse: true,
 			timeBack:         2,
 		},
 		"IsNew should return false as pod and container names match": {
-			image:            Pod.Image,
-			continerName:     Pod.ContainerName,
-			podName:          Pod.PodName,
-			finishedAt:       Pod.FinishedAt,
-			startedAt:        Pod.StartedAt,
-			seen:             Pod.Seen,
+			image:            TestPod.Image,
+			continerName:     TestPod.ContainerName,
+			podName:          TestPod.PodName,
+			finishedAt:       TestPod.FinishedAt,
+			startedAt:        TestPod.StartedAt,
+			seen:             TestPod.Seen,
 			expectedResponse: false,
 			timeBack:         20,
 		},
@@ -211,12 +211,12 @@ func TestIsNew(t *testing.T) {
 		},
 		"IsNew should return false container name and exit code match": {
 			image:            "hubbub",
-			continerName:     Pod.ContainerName,
+			continerName:     TestPod.ContainerName,
 			podName:          "hubbub",
-			exitCode:         Pod.ExitCode,
-			finishedAt:       Pod.FinishedAt,
-			startedAt:        Pod.StartedAt,
-			seen:             Pod.Seen,
+			exitCode:         TestPod.ExitCode,
+			finishedAt:       TestPod.FinishedAt,
+			startedAt:        TestPod.StartedAt,
+			seen:             TestPod.Seen,
 			expectedResponse: false,
 			timeBack:         21,
 		},
@@ -225,7 +225,7 @@ func TestIsNew(t *testing.T) {
 	for testName, testCase := range testSuite {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
-		fakePod := Pod
+		fakePod := TestPod
 
 		// everything will fall into this clause aside from the one testing deepequal
 		// "IsNew should return false as the structs are identical"
@@ -240,7 +240,7 @@ func TestIsNew(t *testing.T) {
 
 		fakePod.ConvertTime()
 
-		ok := Pod.IsNew(fakePod, testCase.timeBack)
+		ok := TestPod.IsNew(fakePod, testCase.timeBack)
 		if ok != testCase.expectedResponse {
 			t.Errorf("expected %v but received %v", testCase.expectedResponse, ok)
 		} else {

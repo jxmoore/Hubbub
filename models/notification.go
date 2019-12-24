@@ -71,6 +71,10 @@ func (s *STDOUT) Init(c *Config) error {
 // Init copies the key from the config into the 'a' and creates the Application Insights Client inside of 'a'
 func (a *ApplicationInsights) Init(c *Config) error {
 
+	if c.Notification.AppInsightsKey == "" {
+		return fmt.Errorf("missing instrumentation key")
+	}
+
 	a.key = c.Notification.AppInsightsKey
 	a.client = appinsights.NewTelemetryClient(c.Notification.AppInsightsKey)
 	return nil
@@ -156,29 +160,30 @@ func (s STDOUT) Notify(details NotificationDetails) error {
 
 // BuildBody is an exported function that takes a NotificationHandler interface and a PodStatusInformation Struct and uses these to build out a notificationDetails
 // struct. The return value (notificationDetails) is used by all structs ({struct}.Notify()) that satisfy the NotificationHandeler interface.
-func BuildBody(handler NotificationHandler, Pod PodStatusInformation) (NotificationDetails, error) {
+func BuildBody(handler NotificationHandler, p PodStatusInformation) (NotificationDetails, error) {
 
 	nDetails := NotificationDetails{}
 
 	if s, ok := handler.(*Slack); ok {
 		var err error
-		nDetails.body, err = BuildSlackBody(*s, Pod)
+		nDetails.body, err = BuildSlackBody(s, p)
 		if err != nil {
 			return nDetails, fmt.Errorf("There was an error creating the body for the slack post. %v", err.Error())
 		}
 		return nDetails, nil
 	}
 
-	Pod.ConvertTime()
-	nDetails.body, _ = json.Marshal(Pod)
+	p.ConvertTime()
+	nDetails.body, _ = json.Marshal(p)
+	nDetails.properties = make(map[string]string)
 
-	nDetails.properties["Pod"] = Pod.PodName
-	nDetails.properties["Container"] = Pod.ContainerName
-	nDetails.properties["Namespace"] = Pod.Namespace
-	nDetails.properties["Image"] = Pod.Image
-	nDetails.properties["RunTime"] = fmt.Sprintf("%v until %v", Pod.StartedAt, Pod.FinishedAt)
-	nDetails.properties["FailureReason"] = podErrorReason(Pod)
-	nDetails.properties["ExitCode"] = podErrorCode(Pod)
+	nDetails.properties["Pod"] = p.PodName
+	nDetails.properties["Container"] = p.ContainerName
+	nDetails.properties["Namespace"] = p.Namespace
+	nDetails.properties["Image"] = p.Image
+	nDetails.properties["RunTime"] = fmt.Sprintf("%v until %v", p.StartedAt, p.FinishedAt)
+	nDetails.properties["FailureReason"] = podErrorReason(p)
+	nDetails.properties["ExitCode"] = podErrorCode(p)
 
 	return nDetails, nil
 
@@ -187,18 +192,18 @@ func BuildBody(handler NotificationHandler, Pod PodStatusInformation) (Notificat
 // BuildSlackBody builds out the JSON payload that is used to post the message to slack.
 // It takes a struct of PodStatusInformation and with that it creates the SlackAttachment struct and marshels 's'
 // The marshalled 's' is returned to the caller.
-func BuildSlackBody(s Slack, Pod PodStatusInformation) ([]byte, error) {
+func BuildSlackBody(s *Slack, p PodStatusInformation) ([]byte, error) {
 
 	color := "danger"
-	errorDetails := podErrorCode(Pod)
-	reason := podErrorReason(Pod)
+	errorDetails := podErrorCode(p)
+	reason := podErrorReason(p)
 
-	Pod.ConvertTime()
+	p.ConvertTime()
 
 	// time.Format returns a string, to get out of having another field in the struct we format it here in line.
 	msg := fmt.Sprintf("The pod : *%v* has encountered an error.\n\nThe container is : *%v*\nWhich is running image : *%v*.\nThe error information is below.\n\n\n"+
-		"> %v\n> %v\n> The pod ran from : *%v until %v*", Pod.PodName, Pod.ContainerName, Pod.Image, reason, errorDetails,
-		Pod.StartedAt.Format(time.Stamp), Pod.FinishedAt.Format(time.Stamp))
+		"> %v\n> %v\n> The pod ran from : *%v until %v*", p.PodName, p.ContainerName, p.Image, reason, errorDetails,
+		p.StartedAt.Format(time.Stamp), p.FinishedAt.Format(time.Stamp))
 
 	s.Attachment = []SlackAttachments{
 		SlackAttachments{

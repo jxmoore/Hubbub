@@ -35,9 +35,10 @@ func BootStrap(path string, envOnly bool) error {
 
 	// Setup the notifications interface
 	var handler models.NotificationHandler
-	if config.Notification.Handler == "slack" {
-		fmt.Println("Using Slack...")
+	if config.Notification.Handler == "slack" || config.Notification.Handler == "sl" {
 		handler = new(models.Slack)
+	} else if config.Notification.Handler == "appinsights" || config.Notification.Handler == "ai" || config.Notification.Handler == "applicationinsights" {
+		handler = new(models.ApplicationInsights)
 	} else {
 		handler = new(models.STDOUT)
 	}
