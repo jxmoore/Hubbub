@@ -1,7 +1,8 @@
-package watcher
+package helpers
 
 import (
 	"fmt"
+	"time"
 
 	"gihutb.com/jxmoore/hubbub/models"
 	"k8s.io/client-go/kubernetes"
@@ -34,10 +35,23 @@ func NewNotification(handler models.NotificationHandler, pod models.PodStatusInf
 	if err != nil {
 		return err
 	}
-	
+
 	if err := handler.Notify(msg); err != nil {
 		return fmt.Errorf("Error sending notification %v", err.Error())
 	}
 
 	return nil
+}
+
+// DebugLog is a helper function that prints one or more items to the console if the debug flag is flipped.
+func DebugLog(debug bool, input ...interface{}) {
+
+	if !debug {
+		return
+	}
+
+	for _, i := range input {
+		fmt.Printf("DEBUG [%v]: %T : %v\n", time.Now().Format("January 2, 2006"), i, i)
+	}
+
 }

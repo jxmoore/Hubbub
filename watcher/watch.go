@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"gihutb.com/jxmoore/hubbub/helpers"
 	"gihutb.com/jxmoore/hubbub/models"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -93,7 +94,7 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 					podInformation.ConvertTime()
 
 					if ok := podInformation.IsNew(lastNotification, config.TimeCheck); ok {
-						if err := NewNotification(handler, podInformation); err != nil {
+						if err := helpers.NewNotification(handler, podInformation); err != nil {
 							fmt.Println(err.Error()) // non termintating
 						} else {
 							lastNotification = podInformation
@@ -107,7 +108,7 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 					podInformation.ConvertTime()
 
 					if ok := podInformation.IsNew(lastNotification, config.TimeCheck); ok {
-						if err := NewNotification(handler, podInformation); err != nil {
+						if err := helpers.NewNotification(handler, podInformation); err != nil {
 							fmt.Println(err.Error()) // non termintating
 						} else {
 							lastNotification = podInformation

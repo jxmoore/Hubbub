@@ -1,4 +1,4 @@
-package watcher
+package helpers
 
 import (
 	"gihutb.com/jxmoore/hubbub/models"

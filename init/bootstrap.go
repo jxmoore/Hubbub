@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"gihutb.com/jxmoore/hubbub/helpers"
 	"gihutb.com/jxmoore/hubbub/models"
 
 	"gihutb.com/jxmoore/hubbub/watcher"
@@ -48,7 +49,7 @@ func BootStrap(path string, envOnly bool) error {
 	}
 
 	// pull kubernetes incluster clientinfo
-	client, err := watcher.GetKubeClient()
+	client, err := helpers.GetKubeClient()
 	if err != nil {
 		return fmt.Errorf(err.Error())
 	}
