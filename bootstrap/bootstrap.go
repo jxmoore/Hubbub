@@ -16,7 +16,7 @@ import (
 func BootStrap(path string, envOnly bool) error {
 
 	// load and parse inital config
-	fmt.Println("Loading config...")
+	fmt.Printf("Starting Hubbub...\n")
 	config := &models.Config{}
 
 	if !envOnly {
@@ -29,10 +29,10 @@ func BootStrap(path string, envOnly bool) error {
 
 	// I beleive that a NULL Namespace in Pods().Watch() will watch everything but because i havent tested it we just enforce it.
 	if config.Namespace == "" {
-		return fmt.Errorf("Please ensure the config has a Namespace specified")
+		return fmt.Errorf("please ensure the config has a Namespace specified")
 	}
 
-	fmt.Printf("Config loaded... \n %v\n", config)
+	helpers.DebugLog(config.Debug, "Configuration loaded...", config)
 
 	// Setup the notifications interface
 	var handler models.NotificationHandler

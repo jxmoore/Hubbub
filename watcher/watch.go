@@ -16,17 +16,16 @@ import (
 // channel os.Signal. Its exported as its called
 func StartWatcher(kubeClient *kubernetes.Clientset, config *models.Config, handler models.NotificationHandler) error {
 
-	// Create the watcher, nill listoptions should result in everything in NAMESPACE
-	fmt.Println("Starting watcher...")
-
+	fmt.Printf("Starting the watcher...\n")
 	for {
 
+		// Create the watcher, nill listoptions should result in everything in NAMESPACE
 		watcher, err := kubeClient.CoreV1().Pods(config.Namespace).Watch(meta_v1.ListOptions{})
 		if err != nil {
 			return fmt.Errorf("Cannot create Pod event watcher, %v", err.Error())
 		}
 
-		fmt.Println("Listening on the watch channel for pod changes...")
+		helpers.DebugLog(config.Debug, "Watcher created, starting podWatcher()")
 		podWatcher(watcher, config, handler)
 
 	}
@@ -45,12 +44,8 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 		select {
 		case e, open := <-watcher.ResultChan():
 
-			if !open {
-				fmt.Println("Channel closed, recreating watcher...")
-				return
-			}
-
-			if e.Object == nil {
+			if !open || e.Object == nil {
+				helpers.DebugLog(config.Debug, "The channel has been closed, attempting to recreate the watcher")
 				return
 			}
 
@@ -60,10 +55,10 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 				continue
 			}
 
-			// ignore itself
+			// ignore self
 			if config.Self != "" {
 				if strings.Contains(strings.ToLower(pod.Name), strings.ToLower(config.Self)) {
-					fmt.Printf("Excluding pod %v\n", pod.Name)
+					helpers.DebugLog(config.Debug, "Detected and excluding a change, the pod is : "+pod.Name+". Skiping as it is matching the self attribute : '"+config.Self+"'.")
 					continue
 				}
 			}
@@ -74,12 +69,10 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 			// deletions and creation will be too noisey due to deployments
 			case watch.Modified:
 
-				if config.Debug {
-					fmt.Printf("New pod change detected :\nPod : %v - Phase : %v\nMessage : %v - Reason : %v\nContainer info : \n%v\n",
-						pod.Name, pod.Status.Phase, pod.Status.Message, pod.Status.Reason, pod.Status.ContainerStatuses)
-				}
+				helpers.DebugLog(config.Debug, "New pod change detected : "+pod.Name+"\nMessage :"+pod.Status.Message+"\nReason : "+pod.Status.Reason, pod.Status.ContainerStatuses)
 
 				if pod.DeletionTimestamp != nil {
+					helpers.DebugLog(config.Debug, "Skipping pod : "+pod.Name+" as it was marked for deletion.")
 					continue
 				}
 
