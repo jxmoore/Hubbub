@@ -44,7 +44,7 @@ func NewNotification(handler models.NotificationHandler, pod models.PodStatusInf
 }
 
 // DebugLog is a helper function that prints one or more items to the console if the debug flag is flipped.
-// It takes the empty interface as structs from other packages (namely the models pacakage) may be passed in; however, 
+// It takes the empty interface as structs from other packages (namely the models pacakage) may be passed in; however,
 // generally speaking only strings are expected.
 func DebugLog(debug bool, input ...interface{}) {
 

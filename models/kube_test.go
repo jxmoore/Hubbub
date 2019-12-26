@@ -145,8 +145,12 @@ func TestConvertTime(t *testing.T) {
 	for testName, testCase := range testSuite {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
+
+		timeZone := "America/New_York"
 		fakePod := TestPod
-		fakePod.ConvertTime()
+		timeLocation, _ := time.LoadLocation(timeZone)
+
+		fakePod.ConvertTime(timeLocation)
 		dateArray := strings.Fields(fakePod.StartedAt.String())
 
 		if dateArray[3] != testCase.expectedZone {
@@ -237,8 +241,9 @@ func TestIsNew(t *testing.T) {
 			fakePod.StartedAt = testCase.startedAt
 			fakePod.FinishedAt = testCase.finishedAt
 		}
-
-		fakePod.ConvertTime()
+		timeZone := "America/New_York"
+		timeLocation, _ := time.LoadLocation(timeZone)
+		fakePod.ConvertTime(timeLocation)
 
 		ok := TestPod.IsNew(fakePod, testCase.timeBack)
 		if ok != testCase.expectedResponse {

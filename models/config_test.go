@@ -7,11 +7,13 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 )
 
 // configFile is a package wide Config{} used in all of the model tests as a base.
 var configFile = Config{
 	Namespace: "jomo",
+	TimeZone:  "America/New_York",
 }
 
 // TestLoadConfig tests the Load() method on Config.
@@ -73,6 +75,7 @@ func TestConfigLoad(t *testing.T) {
 		configFile.Self = testCase.Self
 		configFile.Debug = testCase.Debug
 		configFile.TimeCheck = testCase.timeCheck
+		configFile.TimeLocation, _ = time.LoadLocation(configFile.TimeZone)
 
 		content, err := json.Marshal(configFile)
 		if err != nil {
@@ -102,7 +105,7 @@ func TestConfigLoad(t *testing.T) {
 			if reflect.DeepEqual(newConf, configFile) {
 				t.Logf("Config structs match")
 			} else {
-				t.Errorf("Struct returned from Load() does not match the test struct!")
+				t.Errorf("Struct returned from Load() does not match the test struct!, %v != %v", newConf, configFile)
 			}
 
 		} else {

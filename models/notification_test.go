@@ -159,11 +159,13 @@ func TestBuildBody(t *testing.T) {
 		}
 
 		c := configFile
+		tl, _ := time.LoadLocation(c.TimeZone)
 		c.Notification.SlackWebHook = "google.com"
 		c.Notification.SlackTitle = "Oh no!"
 
 		bodyHandler.Init(&c)
-		p.ConvertTime()
+		p.ConvertTime(tl)
+
 		msgInBytes, _ := BuildBody(bodyHandler, p)
 
 		if testCase.notificationType == "stdout" {

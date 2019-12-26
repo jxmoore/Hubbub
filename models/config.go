@@ -8,15 +8,18 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Config is the struct that contains all of the hubbub config
 type Config struct {
-	Namespace    string `json:"namespace"`
-	Labels       string `json:"labels"` // TODO, currently not implemented
-	Debug        bool   `json:"debug"`
-	Self         string `json:"self"`
-	TimeCheck    int    `json:"time"`
+	Namespace    string         `json:"namespace"`
+	Labels       string         `json:"labels"` // TODO, currently not implemented
+	Debug        bool           `json:"debug"`
+	Self         string         `json:"self"`
+	TimeCheck    int            `json:"time"`
+	TimeZone     string         `json:"timezone"`
+	TimeLocation *time.Location `json:"-"`
 	Notification struct {
 		Handler string `json:"type"`
 		// Slack specifics
@@ -46,12 +49,23 @@ func (c *Config) Load(configFile string) error {
 		return fmt.Errorf("Error reading file %v. %v ", configFile, err.Error())
 	}
 
-	if len(content) != 0 {
-		c.Notification.Handler = strings.ToLower(c.Notification.Handler)
-		return json.Unmarshal(content, c)
+	if len(content) == 0 {
+		return nil
 	}
 
-	return nil
+	c.Notification.Handler = strings.ToLower(c.Notification.Handler)
+
+	if c.TimeZone == "" {
+		c.TimeZone = "America/New_York"
+	}
+
+	c.TimeLocation, err = time.LoadLocation(c.TimeZone) // assumption being it fails because it was not NIL and was malformed previously.
+	if err != nil {
+		c.TimeZone = "America/New_York"
+		c.TimeLocation, _ = time.LoadLocation(c.TimeZone)
+	}
+
+	return json.Unmarshal(content, c)
 }
 
 // LoadEnvVars will pull the associated enviroment variables and assign them to 'c' if they
@@ -59,19 +73,15 @@ func (c *Config) Load(configFile string) error {
 // assigned here if 'c' and the env variable is nil.
 func (c *Config) LoadEnvVars() {
 
-	if c.Namespace == "" && os.Getenv("HUBBUB_NAMESAPCE") != "" {
-		c.Namespace = os.Getenv("HUBBUB_NAMESAPCE")
-	}
-	if c.Self == "" && os.Getenv("HUBBUB_SELF") != "" {
-		c.Self = os.Getenv("HUBBUB_SELF")
-	} else if c.Self == "" && os.Getenv("HUBBUB_SELF") == "" {
-		c.Self = "Hubbub"
-	}
+	var err error
 	if !c.Debug && os.Getenv("HUBBUB_DEBUG") != "" {
 		debug, err := strconv.ParseBool(os.Getenv("HUBBUB_DEBUG"))
 		if err == nil {
 			c.Debug = debug
 		}
+	}
+	if c.Namespace == "" && os.Getenv("HUBBUB_NAMESAPCE") != "" {
+		c.Namespace = os.Getenv("HUBBUB_NAMESAPCE")
 	}
 	if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") != "" {
 		timeEnv, err := strconv.Atoi(os.Getenv("HUBBUB_TIMECHECK"))
@@ -82,6 +92,21 @@ func (c *Config) LoadEnvVars() {
 		}
 	} else if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") == "" {
 		c.TimeCheck = 3
+	}
+	if c.TimeZone == "" && os.Getenv("HUBBUB_TIMEZONE") != "" {
+		c.TimeZone = os.Getenv("HUBBUB_TIMEZONE")
+		c.TimeLocation, err = time.LoadLocation(c.TimeZone) // assumption being it fails because it was not NIL and was malformed previously.
+		if err != nil {
+			c.TimeZone = "America/New_York"
+			c.TimeLocation, _ = time.LoadLocation(c.TimeZone)
+		}
+	} else if c.TimeZone == "" && os.Getenv("HUBBUB_TIMEZONE") == "" {
+		c.TimeLocation, err = time.LoadLocation("America/New_York")
+	}
+	if c.Self == "" && os.Getenv("HUBBUB_SELF") != "" {
+		c.Self = os.Getenv("HUBBUB_SELF")
+	} else if c.Self == "" && os.Getenv("HUBBUB_SELF") == "" {
+		c.Self = "Hubbub"
 	}
 	if c.Notification.SlackChannel == "" && os.Getenv("HUBBUB_CHANNEL") != "" {
 		c.Notification.SlackChannel = os.Getenv("HUBBUB_CHANNEL")

@@ -80,9 +80,6 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation, timeSince int
 		return false
 	}
 
-	p.ConvertTime()
-	lastSeen.ConvertTime()
-
 	// Check to see if its been over 'x' minutes, if so its new yet again.
 	if ok := p.timeCheck(lastSeen, timeSince); ok {
 		return true
@@ -125,13 +122,10 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation, timeSince int
 // the end users.
 //
 // TODO : The location should be exsposed in the config allowing other time zones.
-func (p *PodStatusInformation) ConvertTime() {
+func (p *PodStatusInformation) ConvertTime(tlocal *time.Location) {
 
-	zone, err := time.LoadLocation("America/New_York")
-	if err == nil {
-		p.FinishedAt = p.FinishedAt.In(zone)
-		p.StartedAt = p.StartedAt.In(zone)
-	} // on err we just maintin the original times
+	p.FinishedAt = p.FinishedAt.In(tlocal)
+	p.StartedAt = p.StartedAt.In(tlocal)
 
 }
 

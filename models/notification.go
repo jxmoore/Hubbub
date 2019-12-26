@@ -173,7 +173,6 @@ func BuildBody(handler NotificationHandler, p PodStatusInformation) (Notificatio
 		return nDetails, nil
 	}
 
-	p.ConvertTime()
 	nDetails.body, _ = json.Marshal(p)
 	nDetails.properties = make(map[string]string)
 
@@ -197,8 +196,6 @@ func BuildSlackBody(s *Slack, p PodStatusInformation) ([]byte, error) {
 	color := "danger"
 	errorDetails := podErrorCode(p)
 	reason := podErrorReason(p)
-
-	p.ConvertTime()
 
 	// time.Format returns a string, to get out of having another field in the struct we format it here in line.
 	msg := fmt.Sprintf("The pod : *%v* has encountered an error.\n\nThe container is : *%v*\nWhich is running image : *%v*.\nThe error information is below.\n\n\n"+

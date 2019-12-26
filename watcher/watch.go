@@ -84,23 +84,30 @@ func podWatcher(watcher watch.Interface, config *models.Config, handler models.N
 				case v1.PodFailed:
 
 					podInformation.Load(pod)
-					podInformation.ConvertTime()
+					podInformation.ConvertTime(config.TimeLocation)
 
 					if ok := podInformation.IsNew(lastNotification, config.TimeCheck); ok {
+
+						helpers.DebugLog(config.Debug, "Pod : "+pod.Name+", is new. Generating a notification.")
+
 						if err := helpers.NewNotification(handler, podInformation); err != nil {
 							fmt.Println(err.Error()) // non termintating
 						} else {
 							lastNotification = podInformation
 						}
+
 					}
 
 				// Other issues
 				default:
 
 					podInformation.Load(pod)
-					podInformation.ConvertTime()
+					podInformation.ConvertTime(config.TimeLocation)
 
 					if ok := podInformation.IsNew(lastNotification, config.TimeCheck); ok {
+
+						helpers.DebugLog(config.Debug, "Pod : "+pod.Name+", is new. Generating a notification.")
+
 						if err := helpers.NewNotification(handler, podInformation); err != nil {
 							fmt.Println(err.Error()) // non termintating
 						} else {
