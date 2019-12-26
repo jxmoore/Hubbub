@@ -20,8 +20,8 @@ type NotificationHandler interface {
 	Notify(NotificationDetails) error
 }
 
-// NotificationDetails is an struct that holds fields used by the the a specific notifications Notify method. For example
-// body is used for slack and STDOUT/Default whereas Properties is used by applicationinsights.
+// NotificationDetails is an struct that holds fields used by the Notify() method for all of the structs that satisfy the handler NotificationHandler.
+// For example body is used for slack and STDOUT/Default whereas Properties is used by applicationinsights.
 type NotificationDetails struct {
 	body       []byte
 	properties map[string]string
@@ -164,7 +164,7 @@ func BuildBody(handler NotificationHandler, p PodStatusInformation) (Notificatio
 
 	nDetails := NotificationDetails{}
 
-	if s, ok := handler.(*Slack); ok {
+	if s, ok := handler.(*Slack); ok { // Slack has its own function so we handle it outside of this function
 		var err error
 		nDetails.body, err = BuildSlackBody(s, p)
 		if err != nil {
