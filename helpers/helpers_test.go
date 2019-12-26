@@ -4,8 +4,8 @@ import (
 	"gihutb.com/jxmoore/hubbub/models"
 )
 
-// pod is a package wide PodStatusInformation{} used in all of the controller tests as a base.
-var pod = models.PodStatusInformation{
+// pod is a package wide PodStatusInformation{} used in all of the herlper tests as a base.
+var testPod = models.PodStatusInformation{
 	Namespace:     "hubbub",
 	PodName:       "hubbub",
 	ContainerName: "hubbub",
@@ -19,7 +19,7 @@ func ExampleNewNotification() {
 
 	var handler models.NotificationHandler
 	handler = new(models.STDOUT)
-	p := pod
+	p := testPod
 	p.Namespace = "hubbub-Testin"
 
 	NewNotification(handler, p)

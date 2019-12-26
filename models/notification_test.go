@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// handler is a package wide NotificationHandler used in all of the model tests as a base.
-var handler NotificationHandler
+// testHandler is a package wide NotificationHandler used in all of the model tests as a base.
+var testHandler NotificationHandler
 
 // TestNotificationInit tests the init(*config) function for the notification hadler.
 // Only the *slack implementation does any true 'work' and thats assignment of values from the *config to a *slack and
@@ -56,7 +56,12 @@ func TestNotificationInit(t *testing.T) {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 
-		notification := handler
+		notification := testHandler
+		fakeConf := testConfigFile // from config_test.go
+		fakeConf.Notification.SlackWebHook = testCase.webhook
+		fakeConf.Notification.SlackChannel = testCase.channel
+		fakeConf.Notification.AppInsightsKey = testCase.key
+		fakeConf.Notification.CustomEventTitle = testCase.eventTitle
 
 		if testCase.notificationType == "slack" {
 			notification = new(Slack)
@@ -65,12 +70,6 @@ func TestNotificationInit(t *testing.T) {
 		} else {
 			notification = new(STDOUT)
 		}
-
-		fakeConf := configFile // from config_test.go
-		fakeConf.Notification.SlackWebHook = testCase.webhook
-		fakeConf.Notification.SlackChannel = testCase.channel
-		fakeConf.Notification.AppInsightsKey = testCase.key
-		fakeConf.Notification.CustomEventTitle = testCase.eventTitle
 
 		if err := notification.Init(&fakeConf); err != nil {
 			if testCase.expectedResponse != err.Error() {
@@ -88,10 +87,10 @@ func TestBuildBody(t *testing.T) {
 
 	// Theses are dummy values that will be present on the returned json body
 	// when calling (s *Slack) BuildBody
-	configFile.Notification.SlackUser = "hubbub"
-	configFile.Notification.SlackIcon = "https://www.sampalm.com/images/me.jpg"
-	configFile.Notification.SlackChannel = "Testing"
-	configFile.Notification.SlackWebHook = "https://www.sampalm.com/images/me.jpg"
+	testConfigFile.Notification.SlackUser = "hubbub"
+	testConfigFile.Notification.SlackIcon = "https://www.sampalm.com/images/me.jpg"
+	testConfigFile.Notification.SlackChannel = "Testing"
+	testConfigFile.Notification.SlackWebHook = "https://www.sampalm.com/images/me.jpg"
 
 	testSuite := map[string]struct {
 		notificationType string
@@ -142,6 +141,9 @@ func TestBuildBody(t *testing.T) {
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 
 		p := TestPod // from kube_test.go
+		c := testConfigFile
+		bodyHandler := testHandler
+
 		p.Namespace = "default"
 		p.Image = "hubbub"
 		p.PodName = "hubbubTestPod-" + testCase.notificationType
@@ -150,18 +152,15 @@ func TestBuildBody(t *testing.T) {
 		p.Reason = testCase.podReason
 		p.Message = testCase.podMessage
 		p.Seen = time.Now()
-		bodyHandler := handler
+		c.Notification.SlackWebHook = "google.com"
+		c.Notification.SlackTitle = "Oh no!"
+		tl, _ := time.LoadLocation(c.TimeZone)
 
 		if testCase.notificationType == "stdout" {
 			bodyHandler = new(STDOUT)
 		} else {
 			bodyHandler = new(Slack)
 		}
-
-		c := configFile
-		tl, _ := time.LoadLocation(c.TimeZone)
-		c.Notification.SlackWebHook = "google.com"
-		c.Notification.SlackTitle = "Oh no!"
 
 		bodyHandler.Init(&c)
 		p.ConvertTime(tl)
@@ -231,7 +230,7 @@ func TestBuildBody(t *testing.T) {
 // on STDOUT is printing the correct byte array to STDOUT
 func ExampleSTDOUTNotify() {
 
-	h := handler
+	h := testHandler
 	h = new(STDOUT)
 	nDetails := NotificationDetails{body: []byte("hello")}
 	h.Notify(nDetails)

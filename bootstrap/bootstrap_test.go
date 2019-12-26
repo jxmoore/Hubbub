@@ -9,12 +9,12 @@ import (
 )
 
 // configFile is a package wide Config{}
-var configFile = models.Config{
+var testConfigFile = models.Config{
 	Namespace: "jomo",
 }
 
 // TestBootStrap tests the BootStrap() function that acts as Hubbubs init. Due to the way the KubeConfig is pulled currently it will error out when pulling the credentials hence the knownIssue variable.
-// This should change in the very near future. 
+// This should change in the very near future.
 func TestBootStrap(t *testing.T) {
 
 	// Currently no way of testing locally with kubeconfig so this will fail with the following :
@@ -96,19 +96,20 @@ func TestBootStrap(t *testing.T) {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 
-		if testCase.useEnv {
+		if testCase.useEnv { // Only using the varibles, not the config.json
 
 			for k, v := range testCase.envVar {
 				os.Setenv(k, v)
 			}
 
-		} else {
-			configFile.Namespace = testCase.namespace
-			configFile.Notification.SlackWebHook = testCase.webhook
-			configFile.Notification.SlackChannel = testCase.channel
-			configFile.Debug = testCase.Debug
+		} else { // create the dummy config files
 
-			content, err := json.Marshal(configFile)
+			testConfigFile.Namespace = testCase.namespace
+			testConfigFile.Notification.SlackWebHook = testCase.webhook
+			testConfigFile.Notification.SlackChannel = testCase.channel
+			testConfigFile.Debug = testCase.Debug
+
+			content, err := json.Marshal(testConfigFile)
 			if err != nil {
 				t.Errorf("Error marshalling JSON %v", err.Error())
 			}

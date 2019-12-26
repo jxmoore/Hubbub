@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Pod is a package wide PodStatusInformation used in all of the model tests as a base.
+// TestPod is a package wide PodStatusInformation used in all of the model tests as a base.
 var TestPod = PodStatusInformation{
 	Namespace:     "hubbub",
 	PodName:       "hubbub",
@@ -123,22 +123,26 @@ func TestConvertTime(t *testing.T) {
 	testSuite := map[string]struct {
 		expectedZone string
 		timeOffset   time.Duration
+		timeZone string
 		PodInfo      PodStatusInformation
 	}{
 		"ConvertTime should EST #1": {
 			expectedZone: "EST",
 			PodInfo:      TestPod,
 			timeOffset:   time.Minute * 19,
+			timeZone : "America/New_York",
 		},
 		"ConvertTime should EST #2": {
 			expectedZone: "EST",
 			PodInfo:      TestPod,
 			timeOffset:   time.Hour * 1,
+			timeZone : "America/New_York",
 		},
 		"ConvertTime should EST #3": {
 			expectedZone: "EST",
 			PodInfo:      TestPod,
 			timeOffset:   time.Hour * 8,
+			timeZone : "America/New_York",
 		},
 	}
 
@@ -146,9 +150,8 @@ func TestConvertTime(t *testing.T) {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 
-		timeZone := "America/New_York"
 		fakePod := TestPod
-		timeLocation, _ := time.LoadLocation(timeZone)
+		timeLocation, _ := time.LoadLocation(testCase.timeZone)
 
 		fakePod.ConvertTime(timeLocation)
 		dateArray := strings.Fields(fakePod.StartedAt.String())
@@ -229,10 +232,16 @@ func TestIsNew(t *testing.T) {
 	for testName, testCase := range testSuite {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
-		fakePod := TestPod
 
+		fakePod := TestPod
+		timeZone := "America/New_York"
+		timeLocation, _ := time.LoadLocation(timeZone)
+		fakePod.ConvertTime(timeLocation)
+		
 		// everything will fall into this clause aside from the one testing deepequal
 		// "IsNew should return false as the structs are identical"
+		// and the the failure for nil values 
+		// "IsNew should return false because of nil values"
 		if testCase.podName != "" {
 			fakePod.Image = testCase.image
 			fakePod.ContainerName = testCase.continerName
@@ -241,9 +250,6 @@ func TestIsNew(t *testing.T) {
 			fakePod.StartedAt = testCase.startedAt
 			fakePod.FinishedAt = testCase.finishedAt
 		}
-		timeZone := "America/New_York"
-		timeLocation, _ := time.LoadLocation(timeZone)
-		fakePod.ConvertTime(timeLocation)
 
 		ok := TestPod.IsNew(fakePod, testCase.timeBack)
 		if ok != testCase.expectedResponse {

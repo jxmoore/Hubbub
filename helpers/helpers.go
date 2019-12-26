@@ -28,7 +28,7 @@ func GetKubeClient() (*kubernetes.Clientset, error) {
 	return kubeClient, nil
 }
 
-// NewNotification calls the methods on the interface that process a notification.
+// NewNotification calls the methods on the NotificationHandler interface that process a notification.
 func NewNotification(handler models.NotificationHandler, pod models.PodStatusInformation) error {
 
 	msg, err := models.BuildBody(handler, pod)

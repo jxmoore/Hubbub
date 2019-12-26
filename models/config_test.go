@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-// configFile is a package wide Config{} used in all of the model tests as a base.
-var configFile = Config{
+// testConfigFile is a package wide Config{} used in all of the model tests as a base.
+var testConfigFile = Config{
 	Namespace: "jomo",
 	TimeZone:  "America/New_York",
 }
@@ -69,15 +69,15 @@ func TestConfigLoad(t *testing.T) {
 
 		t.Logf("\n\nRunning TestCase %v...\n\n", testName)
 
-		configFile.Namespace = testCase.namespace
-		configFile.Notification.SlackWebHook = testCase.webhook
-		configFile.Notification.SlackChannel = testCase.channel
-		configFile.Self = testCase.Self
-		configFile.Debug = testCase.Debug
-		configFile.TimeCheck = testCase.timeCheck
-		configFile.TimeLocation, _ = time.LoadLocation(configFile.TimeZone)
+		testConfigFile.Namespace = testCase.namespace
+		testConfigFile.Notification.SlackWebHook = testCase.webhook
+		testConfigFile.Notification.SlackChannel = testCase.channel
+		testConfigFile.Self = testCase.Self
+		testConfigFile.Debug = testCase.Debug
+		testConfigFile.TimeCheck = testCase.timeCheck
+		testConfigFile.TimeLocation, _ = time.LoadLocation(testConfigFile.TimeZone)
 
-		content, err := json.Marshal(configFile)
+		content, err := json.Marshal(testConfigFile)
 		if err != nil {
 			t.Errorf("Error marshalling JSON %v", err.Error())
 		}
@@ -102,10 +102,10 @@ func TestConfigLoad(t *testing.T) {
 		newConf := Config{}
 		if ok := newConf.Load(testCase.filePath); ok == nil {
 
-			if reflect.DeepEqual(newConf, configFile) {
+			if reflect.DeepEqual(newConf, testConfigFile) {
 				t.Logf("Config structs match")
 			} else {
-				t.Errorf("Struct returned from Load() does not match the test struct!, %v != %v", newConf, configFile)
+				t.Errorf("Struct returned from Load() does not match the test struct!, %v != %v", newConf, testConfigFile)
 			}
 
 		} else {

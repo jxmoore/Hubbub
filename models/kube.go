@@ -23,7 +23,8 @@ type PodStatusInformation struct {
 	Seen          time.Time
 }
 
-// Load takes a pod info and then loads the attributes of them into the PodStatusInformation struct
+// Load takes a *v1.Pod and loads the attributes into the PodStatusInformation struct. it has some
+// logic to ensure the we dont alert on pending/succefully completed pods and things of that nature.
 func (p *PodStatusInformation) Load(pod *v1.Pod) {
 
 	p.Namespace = pod.Namespace
@@ -69,10 +70,13 @@ func (p *PodStatusInformation) Load(pod *v1.Pod) {
 }
 
 // IsNew compares fields in p with the ones passed in on lastSeen. The purpose is to validate
-// that a instance of the struct is new, if it is a repeat or if its close enough to be a repeat.
+// that a instance of the struct is new and not a repeat or close enough to be considered a repeat.
+//
 // This is done to cut down on redundant messages generated in Watch(). For e.g. a pod that terminates
-// shortly after startup due to an error in program.cs and restarts will generate constant alerts as
-// it constantly goes up and down but we only want the first (or one thats older than 'X').
+// shortly after startup due to an error in program.cs will be restarted
+// by kubernetes where it will proceed to fail again and constantly generate alerts as it goes up and down.
+//
+// Is new returns true if the pod has not been seen for 'x' minutes or it does not match any of the criteria
 func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation, timeSince int) bool {
 
 	// assume not a failure
@@ -117,11 +121,26 @@ func (p PodStatusInformation) IsNew(lastSeen PodStatusInformation, timeSince int
 	return true
 }
 
+// timeCheck checks to see if a pod was seen more than 'x' minutes ago. This is acheived
+// by diffing the 'seen' values in both struct ('p' and 'lastSeen') and then seeing if it
+// exceeds the timeSince value provided in the config.
+func (p PodStatusInformation) timeCheck(lastSeen PodStatusInformation, timeSince int) bool {
+
+	newPod := p.Seen
+	LastPod := lastSeen.Seen
+	diff := newPod.Sub(LastPod)
+
+	if diff > (time.Minute * time.Duration(timeSince)) {
+		return true
+	}
+
+	return false
+
+}
+
 // ConvertTime converts all of the times found in p to local (EST). This is in place because some
 // users host their Kubeernetes clusters in cloud enviroments where the local timezone does not match
 // the end users.
-//
-// TODO : The location should be exsposed in the config allowing other time zones.
 func (p *PodStatusInformation) ConvertTime(tlocal *time.Location) {
 
 	p.FinishedAt = p.FinishedAt.In(tlocal)
@@ -152,25 +171,8 @@ func (p PodStatusInformation) ExitCodeLookup() string {
 
 }
 
-// timeCheck checks to see if a pod was seen more than 'x' minutes ago. This is acheived
-// by diffing the 'seen' values in both struct ('p' and 'lastSeen') and then seeing if it
-// exceeds the timeSince value provided in the config.
-func (p PodStatusInformation) timeCheck(lastSeen PodStatusInformation, timeSince int) bool {
-
-	newPod := p.Seen
-	LastPod := lastSeen.Seen
-	diff := newPod.Sub(LastPod)
-
-	if diff > (time.Minute * time.Duration(timeSince)) {
-		return true
-	}
-
-	return false
-
-}
-
-// podErrorReason returns a well formated string that uses p.Reason and p.Message depending upon
-// their values.
+// podErrorReason returns a string composed of p.Reason and/or p.Message depending upon
+// their values. If both are nil a user friendly nil is returned.
 func podErrorReason(p PodStatusInformation) string {
 
 	if p.Reason != "" && p.Message != "" {
@@ -185,7 +187,7 @@ func podErrorReason(p PodStatusInformation) string {
 
 }
 
-// podErroCode returns a concat of the errorcode and its details if found as a string
+// podErroCode returns a concat of the errorcode (int) and that error codes meaning if one is returned via ExitCodeLookup()
 func podErrorCode(p PodStatusInformation) string {
 
 	errorDetails := strconv.Itoa(p.ExitCode)
