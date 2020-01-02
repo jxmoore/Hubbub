@@ -3,7 +3,6 @@ package models
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -97,7 +96,7 @@ func (s *Slack) Init(c *Config) error {
 	}
 
 	if s.WebHook == "" || s.Channel == "" {
-		return fmt.Errorf("Missing slack token or channel")
+		return fmt.Errorf("missing slack token or channel")
 	}
 
 	return nil
@@ -124,13 +123,13 @@ func (s Slack) Notify(details NotificationDetails) error {
 	buffer := bytes.NewBuffer(details.body)
 	request, err := http.NewRequest("POST", s.WebHook, buffer)
 	if err != nil {
-		return errors.New(err.Error())
+		return fmt.Errorf("encountered an error creating request : %v", err)
 	}
 
 	request.Header.Add("Content-Type", "application/json")
 	response, err := client.Do(request)
 	if err != nil {
-		return errors.New(err.Error())
+		return fmt.Errorf("unable to perform POST request : %v", err)
 	}
 
 	defer response.Body.Close()
@@ -138,7 +137,7 @@ func (s Slack) Notify(details NotificationDetails) error {
 	// Output is just dropped as is, not unmarsheled
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return errors.New(err.Error())
+		return fmt.Errorf("unable to read response body : %v", err)
 	}
 
 	if strings.ToLower(string(body)) == "ok" {
@@ -168,7 +167,7 @@ func BuildBody(handler NotificationHandler, p PodStatusInformation) (Notificatio
 		var err error
 		nDetails.body, err = BuildSlackBody(s, p)
 		if err != nil {
-			return nDetails, fmt.Errorf("There was an error creating the body for the slack post. %v", err.Error())
+			return nDetails, err
 		}
 		return nDetails, nil
 	}

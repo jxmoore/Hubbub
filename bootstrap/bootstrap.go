@@ -2,7 +2,6 @@ package bootstrap
 
 import (
 	"fmt"
-	"log"
 
 	"gihutb.com/jxmoore/hubbub/helpers"
 	"gihutb.com/jxmoore/hubbub/models"
@@ -21,7 +20,7 @@ func BootStrap(path string, envOnly bool) error {
 
 	if !envOnly {
 		if err := config.Load(path); err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("error loading config : \n%v", err)
 		}
 	}
 
@@ -45,13 +44,13 @@ func BootStrap(path string, envOnly bool) error {
 	}
 
 	if err := handler.Init(config); err != nil {
-		return fmt.Errorf("Error prepaing handler interface %v", err.Error())
+		return fmt.Errorf("error prepaing handler interface : \n%v", err.Error())
 	}
 
 	// pull kubernetes incluster clientinfo
 	client, err := helpers.GetKubeClient()
 	if err != nil {
-		return fmt.Errorf(err.Error())
+		return fmt.Errorf("error getting kubeclient info : \n%v", err.Error())
 	}
 
 	watcher.StartWatcher(client, config, handler)

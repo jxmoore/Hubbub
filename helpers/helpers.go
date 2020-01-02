@@ -15,13 +15,13 @@ func GetKubeClient() (*kubernetes.Clientset, error) {
 	// Get the config
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, fmt.Errorf("Can not get kubernetes config: %v", err)
+		return nil, fmt.Errorf("error getting config : %v", err)
 	}
 
 	// Get the client info
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, fmt.Errorf("Can not get kubernetes config: %v", err)
+		return nil, fmt.Errorf("unable to create clientset: %v", err)
 	}
 
 	fmt.Println("Kube credentials pulled...")
@@ -33,11 +33,11 @@ func NewNotification(handler models.NotificationHandler, pod models.PodStatusInf
 
 	msg, err := models.BuildBody(handler, pod)
 	if err != nil {
-		return err
+		return fmt.Errorf("error building notification body %v", err)
 	}
 
 	if err := handler.Notify(msg); err != nil {
-		return fmt.Errorf("Error sending notification %v", err.Error())
+		return fmt.Errorf("error sending notification %v", err)
 	}
 
 	return nil

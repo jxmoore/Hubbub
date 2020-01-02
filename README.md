@@ -28,7 +28,7 @@ Clone this repository by running
  git clone https://github.com/jxmoore/Hubbub`
  cd /Hubbub
  ```
-Once cloned you will want to create the config file to suite your needs, while there are various options for an MVP approach update the example config found in <a href="examples/exampleConfig1.json"> /examples/exampleConfig1.json </a>. You will want to change the namespace, webhook and slack channel to match your enviroment. 
+Once cloned you will want to create the config file to suite your needs, while there are various options for an MVP approach update the example config found in <a href="config/exampleConfig1.json"> /config/exampleConfig1.json </a>. You will want to change the namespace, webhook and slack channel to match your enviroment. 
 
 ```json
 {
@@ -94,7 +94,7 @@ There are two ways to tune and configure Hubbub, either through a configuration 
 
 <br>
 
->For an example of a configuration with all of the settings supplied see  <a href="examples/exampleConfig2.json"> /examples/exampleConfig2.json</a>.
+>For an example of a configuration with all of the settings supplied see  <a href="config/exampleConfig2.json"> /config/exampleConfig2.json</a>.
 <br>
 
 

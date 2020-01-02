@@ -39,14 +39,14 @@ func (c *Config) Load(configFile string) error {
 
 	file, err := os.Open(configFile)
 	if err != nil {
-		return fmt.Errorf("Unable to open config file %v. %v ", configFile, err.Error())
+		return fmt.Errorf("unable to open config file %v.\n%v ", configFile, err)
 	}
 
 	defer file.Close()
 
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
-		return fmt.Errorf("Error reading file %v. %v ", configFile, err.Error())
+		return fmt.Errorf("error reading file %v.\n%v ", configFile, err.Error())
 	}
 
 	if len(content) == 0 {

@@ -22,7 +22,7 @@ func StartWatcher(kubeClient *kubernetes.Clientset, config *models.Config, handl
 		// Create the watcher, nill listoptions should result in everything in NAMESPACE
 		watcher, err := kubeClient.CoreV1().Pods(config.Namespace).Watch(meta_v1.ListOptions{})
 		if err != nil {
-			return fmt.Errorf("Cannot create Pod event watcher, %v", err.Error())
+			return fmt.Errorf("error creating watcher : %v", err)
 		}
 
 		helpers.DebugLog(config.Debug, "Watcher created, starting podWatcher()")
