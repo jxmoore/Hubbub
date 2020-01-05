@@ -14,12 +14,12 @@ import (
 // Config is the struct that contains all of the hubbub config
 type Config struct {
 	Namespace    string         `json:"namespace"`
-	Labels       string         `json:"labels"` // TODO, currently not implemented
 	Debug        bool           `json:"debug"`
 	Self         string         `json:"self"`
 	TimeCheck    int            `json:"time"`
 	TimeZone     string         `json:"timezone"`
 	TimeLocation *time.Location `json:"-"`
+	//	Labels       string         `json:"labels"` // TODO, currently not implemented
 	Notification struct {
 		Handler string `json:"type"`
 		// Slack specifics
@@ -86,7 +86,7 @@ func (c *Config) LoadEnvVars() {
 	if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") != "" {
 		timeEnv, err := strconv.Atoi(os.Getenv("HUBBUB_TIMECHECK"))
 		if err != nil {
-			c.TimeCheck = 3
+			c.TimeCheck = 5
 		} else {
 			c.TimeCheck = timeEnv
 		}
@@ -128,6 +128,14 @@ func (c *Config) LoadEnvVars() {
 		c.Notification.SlackTitle = os.Getenv("HUBBUB_TITLE")
 	} else if c.Notification.SlackTitle == "" && os.Getenv("HUBBUB_TITLE") == "" {
 		c.Notification.SlackTitle = "There has been a pod error in production!"
+	}
+	if c.Notification.AppInsightsKey == "" && os.Getenv("HUBBUB_AIKEY") != "" {
+		c.Notification.AppInsightsKey = os.Getenv("HUBBUB_AIKEY")
+	}
+	if c.Notification.CustomEventTitle == "" && os.Getenv("HUBBUB_AITITLE") != "" {
+		c.Notification.CustomEventTitle = os.Getenv("HUBBUB_AITITLE")
+	} else if c.Notification.CustomEventTitle == "" && os.Getenv("HUBBUB_AITITLE") == "" {
+		c.Notification.CustomEventTitle = "There has been a pod error in production!"
 	}
 
 }
