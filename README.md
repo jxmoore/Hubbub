@@ -87,19 +87,6 @@ Once deployed you are off to the races! Hubbub should now be watching the namesp
 If you encounter issues running Hubbub please see the <a href="docs/Troubleshooting.md"> troubleshooting</a> document in this repo.
 <br> 
 
-## Config
-There are two ways to tune and configure Hubbub, either through a configuration file `config.json` provided to the binary at runtime (via **-c FILEPATH**) or through enviroment variables. 
-<details><summary><b>The enviroment variables and what they control</b></summary>
-</details>
-<details><summary><b>The json fields and what they control</b></summary>
-</details>
-
-<br>
-
->For an example of a configuration with all of the settings supplied see  <a href="docs/exampleConfig2.json"> /docs/exampleConfig2.json</a>.
-<br>
-
-
 ## Building locally
 If building the application locally do so outside of $GOPATH and ensure that you are using at least go V1.12. Aside from that a simple `go build .` in the PWD should result in a built binary. However Hubbub uses the InCluster config (this will change in the future), so a built locally binary will do you no good unless your troubleshooting the build or planning on moving it to a container in a cluster. 
 
