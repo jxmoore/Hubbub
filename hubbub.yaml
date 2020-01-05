@@ -17,15 +17,17 @@ spec:
     spec:
       containers:
       - name: hubbub
-        image: repo/hubbub:0.1
+        image: repo:5000/hubbub:0.1
+        resources:
+          limits:
+            cpu: 20m
+            memory: 20M
+          requests:
+            cpu: 5m
+            memory: 15M
         env:
         - name: AZMON_COLLECT_ENV
           value: "FALSE"             
-      dnsConfig:
-        options:
-          - name: single-request-reopen
-      imagePullSecrets:
-      - name: artcred
       serviceAccountName: hubbub
 ---
 kind: ClusterRole

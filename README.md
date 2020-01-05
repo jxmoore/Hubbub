@@ -1,7 +1,96 @@
-# Hubbub
-HubBub produces alerts for Pod and Container failures.
+# Hubbub 
 
-Hubbub is a small application that runs locally inside of a Kubernetes cluster with a given service account, alerting on pod and container failures. It has no external dependencies outside of the STDLIB and Kubernetes packages.
+<img src="images/Hubbub.png" align="right" title="Hubbub" width="175" height="175">
+
+Hubbub is a small application that runs locally inside of a Kubernetes cluster with a given service account and watches a given namespace. If a pod failure is seen (SEGFAULT, Eviction etc..) in the namespace Hubbub is watching it will send a notification containing the information about the pod and container. It has no external dependencies outside of the STDLIB and Kubernetes packages.
+
+<br>
+<br>
+
+<p align="center">
+	<br>
+  <img src="images/eviction.PNG" align="middle" title="Eviction" width="635" height="175"   >
+</p>
+
+
+<br><br>
+
+
+## Installation and setup
+At this time Hubbub is not hosted in any public image repository so you will need to build the image yourself and then deploy it to a kubernetes cluster. The following steps will walk you through that process.
+> If using slack you will also need a slack webhook. This readme does not go into the specifics for creating one, if you need assistance please see <a href="https://api.slack.com/messaging/webhooks">this page.</a>
+
+<br>
+
+#### Build the docker image
+Clone this repository by running 
+```shell
+ git clone https://github.com/jxmoore/Hubbub`
+ cd /Hubbub
+ ```
+Once cloned you will want to create the config file to suite your needs, while there are various options for an MVP approach update the example config found in <a href="docs/exampleConfig1.json"> /docs/exampleConfig1.json </a>. You will want to change the namespace, webhook and slack channel to match your enviroment. 
+
+```json
+{
+	"namespace": "YOUR NAMESPACE",
+	"Self": "Hubbub",
+	"slack": {
+		"webhook": "YOUR WEBHOOK",
+		"channel": "#YOUR SLACK CHANNEL"
+		}
+}
+```
+For a run down of all of the configuration options and enviroment variables used by Hubbub please see the <a href="docs/Config.md"> config</a> document in this repo. Save this file in the root of /Hubbub and call it config.json. With the json created, we can build the docker image by running the following :
+
+```shell
+ docker build . -t <repoName>:<versionTag>
+ docker push . -t <repoName>:<versionTag>
+```
+
+#### Deploy to Kubernetes 
+Once you have pushed the image to a repository you can now deploy it to kubernetes. To do this update the YAML file found in this repository <a href="hubbub.yaml"> /Hubbub/hubbub.yaml </a> to match your enviroment. You will wnat to put hubbub in the appropriate Namespace, update any enviroment variables you would like to use and ensure that the image points to the one you just pushed : 
+
+```diff
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+   name: hubbub
+-  namespace: default
++  namespace: blockChaining
+spec:
+
+    ...
+
+        - name: hubbub
+-        image: repo:5000/hubbub:0.1
++        image: YOURREPO/hubbub:VERSION
+        env:
+-        - name: AZMON_COLLECT_ENV
+-          value: "FALSE"            
++        - name: HUBBUB_USER
++          value: "Jobo"        
+```
+
+You can change the deployment, clusterRole, binding and service account to however you see fit but : 
+* Hubbub requires **GET, WATCH and LIST** permissions. 
+* Hubbub will try to exclude itself from notifications, meaning it wont alert on a pod/container that matches Hubbub. If you change the deployment and container names update the *Self* config option or set the `HUBBUB_SELF` enviroment variable.
+
+Once deployed you are off to the races! Hubbub should now be watching the namespace you specified in the config.json file and will alert via a slack message on any container or pod issues :
+
+<br>
+
+<p align="center">
+  <img src="images/segfault.PNG" align="middle" title="Segfault" width="635" height="175"  >
+</p>
+<br>
+
+If you encounter issues running Hubbub please see the <a href="docs/Troubleshooting.md"> troubleshooting</a> document in this repo.
+<br> 
+
+## Building locally
+If building the application locally do so outside of $GOPATH and ensure that you are using at least go V1.12. Aside from that a simple `go build .` in the PWD should result in a built binary. However Hubbub uses the InCluster config (this will change in the future), so a built locally binary will do you no good unless your troubleshooting the build or planning on moving it to a container in a cluster. 
+
+The supplied dockerfile can be used to build a useable docker image, see <a href="#Build-the-docker-image"> Build the docker image</a> above.
 
 Download:
 ```shell
@@ -9,37 +98,10 @@ go get github.com/jxmoore/hubbub
 ```
 If you do not have the go command on your system, you need to [Install Go](http://golang.org/doc/install) first.
 
-* * *
+<br>
 
-Hubbub runs indeffinatly and listens for pod and container changes on a channel until the application is terminated. If a pod failure is seen on the channel the information about the pod and container is sent as a notification using STDOUT or Slack.
-
-![Example of a segmentation fault that causes the app to crash](images/segfault.PNG)
-
-
-> When a change is seen Hubbub checks to see if its new, this is done using a very soft match.
-> This is to prevent noise, for example to ensure a constant restarting container does not generate constant... hubbub. If the same  
-> container/pod was last seen five minutes ago the notification is considered new again and will be sent. 
-	
->> See the IsNew() method on the PodStatusInformation struct in kube.go for information on how the decision is made.
-
-## Build
-If building the application locally do so outside of $GOPATH and ensure that you are using at least go V1.12. Aside from that a simple `go build .` in the PWD should result in a built binary. However Hubbub uses the InCluster config, so a built locally binary will do you no good unless your troubleshooting the build or planning on moving it to a container in a cluster. The supplied dockerfile can be used to build a useable docker image.
-
-## Usage
-Update the yaml file supplied to create a service account, cluster role binding etc... ensure that all reside within the correct namespace and the image matches either the newest image for Hubbub or one you have built. If you have built this image yourself and supplied your own config you should be good to go.
-
-If you have *NOT* supplied a new config however and are using the Hubbub image you can :
-- Create a config, present it to the container as a mount and point to it via -c in the CMD
-- Use the -e flag and specify all settings as env variables, see `config.go` for more information on the enviroment variables used..
-
-## Errors 
-- If you are receiving `Cannot create Pod event watcher....` in the console output ensure the service account, role and rolebinding are correct. It requires WATCH, GET and LIST permissions.
-- If there are no messages being posted in slack channel 'x' ensure your webhook is correct. Assuming it is be sure to check the console output. When sending the notification if no error is received the console should read 'Slack message sent...' along with the response body from slack, if there are errors these are written out as well.
-- If you think you are missing changes check the before mentioned IsNew method, it could be that the changes you expect are being deemed 'old'.
-
-### TODO 
-- Tests.
-- Parse the slack response body to ensure 'ok' is received back.
+### TODO
+- Update GetKubeClient() to allow using a local config for testing outside of a cluster.
 - Implement the LabelSelectors.
-- ~The IsNew() should do a check on duration and ensure if 'x' time has passed the notification should be sent regardless.~
 - The 'value' field in the slack post should be exsposed in the config and should take Go templating syntax.
+- More notification types, e.g. SMTP

@@ -1,0 +1,9 @@
+{
+	"namespace": "YOUR NAMESPACE",
+	"Self": "Hubbub",
+	"notifications": {
+		"type": "slack",
+		"slackWebhook": "YOUR WEBHOOK",
+		"slackChannel": "#YOUR SLACK CHANNEL"
+		}
+}

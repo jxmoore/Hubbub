@@ -6,20 +6,32 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // Config is the struct that contains all of the hubbub config
 type Config struct {
-	Namespace string `json:"namespace,omitempty"`
-	Labels    string `json:"labels,omitempty"` // TODO, currently not implemented
-	Slack     struct {
-		WebHook string `json:"webhook"`
-		Channel string `json:"channel"`
-		Title   string `json:"title,omitempty"`
-		User    string `json:"user,omitempty"`
-		Icon    string `json:"icon,omitempty"`
-	} `json:"slack"`
-	STDOUT bool `json:"stdout,omitempty"`
+	Namespace    string         `json:"namespace"`
+	Debug        bool           `json:"debug"`
+	Self         string         `json:"self"`
+	TimeCheck    int            `json:"time"`
+	TimeZone     string         `json:"timezone"`
+	TimeLocation *time.Location `json:"-"`
+	//	Labels       string         `json:"labels"` // TODO, currently not implemented
+	Notification struct {
+		Handler string `json:"type"`
+		// Slack specifics
+		SlackWebHook string `json:"slackWebhook,omitempty"`
+		SlackChannel string `json:"slackChannel,omitempty"`
+		SlackTitle   string `json:"slackTitle,omitempty"`
+		SlackUser    string `json:"slackUser,omitempty"`
+		SlackIcon    string `json:"slackIcon,omitempty"`
+		// Application Insights
+		AppInsightsKey   string `json:"instrumentationKey,omitempty"`
+		CustomEventTitle string `json:"customEventTitle.omitempty"`
+	} `json:"notifications"`
 }
 
 // Load attempts to read the config file and unmarshel it into 'c'
@@ -27,21 +39,33 @@ func (c *Config) Load(configFile string) error {
 
 	file, err := os.Open(configFile)
 	if err != nil {
-		return fmt.Errorf("Unable to open config file %v. %v ", configFile, err.Error())
+		return fmt.Errorf("unable to open config file %v.\n%v ", configFile, err)
 	}
 
 	defer file.Close()
 
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
-		return fmt.Errorf("Error reading file %v. %v ", configFile, err.Error())
+		return fmt.Errorf("error reading file %v.\n%v ", configFile, err.Error())
 	}
 
-	if len(content) != 0 {
-		return json.Unmarshal(content, c)
+	if len(content) == 0 {
+		return nil
 	}
 
-	return nil
+	c.Notification.Handler = strings.ToLower(c.Notification.Handler)
+
+	if c.TimeZone == "" {
+		c.TimeZone = "America/New_York"
+	}
+
+	c.TimeLocation, err = time.LoadLocation(c.TimeZone) // assumption being it fails because it was not NIL and was malformed previously.
+	if err != nil {
+		c.TimeZone = "America/New_York"
+		c.TimeLocation, _ = time.LoadLocation(c.TimeZone)
+	}
+
+	return json.Unmarshal(content, c)
 }
 
 // LoadEnvVars will pull the associated enviroment variables and assign them to 'c' if they
@@ -49,29 +73,69 @@ func (c *Config) Load(configFile string) error {
 // assigned here if 'c' and the env variable is nil.
 func (c *Config) LoadEnvVars() {
 
-	if c.Namespace == "" && os.Getenv("NAMESAPCE") != "" {
-		c.Namespace = os.Getenv("NAMESAPCE")
+	var err error
+	if !c.Debug && os.Getenv("HUBBUB_DEBUG") != "" {
+		debug, err := strconv.ParseBool(os.Getenv("HUBBUB_DEBUG"))
+		if err == nil {
+			c.Debug = debug
+		}
 	}
-	if c.Slack.Channel == "" && os.Getenv("SLACK_CHANNEL") != "" {
-		c.Slack.Channel = os.Getenv("SLACK_CHANNEL")
+	if c.Namespace == "" && os.Getenv("HUBBUB_NAMESAPCE") != "" {
+		c.Namespace = os.Getenv("HUBBUB_NAMESAPCE")
 	}
-	if c.Slack.WebHook == "" && os.Getenv("SLACK_WEBHOOK") != "" {
-		c.Slack.WebHook = os.Getenv("SLACK_WEBHOOK")
+	if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") != "" {
+		timeEnv, err := strconv.Atoi(os.Getenv("HUBBUB_TIMECHECK"))
+		if err != nil {
+			c.TimeCheck = 5
+		} else {
+			c.TimeCheck = timeEnv
+		}
+	} else if c.TimeCheck == 0 && os.Getenv("HUBBUB_TIMECHECK") == "" {
+		c.TimeCheck = 3
 	}
-	if c.Slack.User == "" && os.Getenv("SLACK_USER") != "" {
-		c.Slack.User = os.Getenv("SLACK_USER")
-	} else if c.Slack.User == "" && os.Getenv("SLACK_USER") == "" {
-		c.Slack.User = "Hubbub"
+	if c.TimeZone == "" && os.Getenv("HUBBUB_TIMEZONE") != "" {
+		c.TimeZone = os.Getenv("HUBBUB_TIMEZONE")
+		c.TimeLocation, err = time.LoadLocation(c.TimeZone) // assumption being it fails because it was not NIL and was malformed previously.
+		if err != nil {
+			c.TimeZone = "America/New_York"
+			c.TimeLocation, _ = time.LoadLocation(c.TimeZone)
+		}
+	} else if c.TimeZone == "" && os.Getenv("HUBBUB_TIMEZONE") == "" {
+		c.TimeLocation, err = time.LoadLocation("America/New_York")
 	}
-	if c.Slack.Icon == "" && os.Getenv("SLACK_ICON") != "" {
-		c.Slack.Icon = os.Getenv("SLACK_ICON")
-	} else if c.Slack.Icon == "" && os.Getenv("SLACK_ICON") == "" {
-		c.Slack.Icon = "https://www.sampalm.com/images/me.jpg"
+	if c.Self == "" && os.Getenv("HUBBUB_SELF") != "" {
+		c.Self = os.Getenv("HUBBUB_SELF")
+	} else if c.Self == "" && os.Getenv("HUBBUB_SELF") == "" {
+		c.Self = "Hubbub"
 	}
-	if c.Slack.Title == "" && os.Getenv("SLACK_TITLE") != "" {
-		c.Slack.Title = os.Getenv("SLACK_TITLE")
-	} else if c.Slack.Title == "" && os.Getenv("SLACK_TITLE") == "" {
-		c.Slack.Title = "There has been a pod error in production!"
+	if c.Notification.SlackChannel == "" && os.Getenv("HUBBUB_CHANNEL") != "" {
+		c.Notification.SlackChannel = os.Getenv("HUBBUB_CHANNEL")
+	}
+	if c.Notification.SlackWebHook == "" && os.Getenv("HUBBUB_WEBHOOK") != "" {
+		c.Notification.SlackWebHook = os.Getenv("HUBBUB_WEBHOOK")
+	}
+	if c.Notification.SlackUser == "" && os.Getenv("HUBBUB_USER") != "" {
+		c.Notification.SlackUser = os.Getenv("HUBBUB_USER")
+	} else if c.Notification.SlackUser == "" && os.Getenv("HUBBUB_USER") == "" {
+		c.Notification.SlackUser = "Hubbub"
+	}
+	if c.Notification.SlackIcon == "" && os.Getenv("HUBBUB_ICON") != "" {
+		c.Notification.SlackIcon = os.Getenv("HUBBUB_ICON")
+	} else if c.Notification.SlackIcon == "" && os.Getenv("HUBBUB_ICON") == "" {
+		c.Notification.SlackIcon = "https://www.sampalm.com/images/me.jpg"
+	}
+	if c.Notification.SlackTitle == "" && os.Getenv("HUBBUB_TITLE") != "" {
+		c.Notification.SlackTitle = os.Getenv("HUBBUB_TITLE")
+	} else if c.Notification.SlackTitle == "" && os.Getenv("HUBBUB_TITLE") == "" {
+		c.Notification.SlackTitle = "There has been a pod error in production!"
+	}
+	if c.Notification.AppInsightsKey == "" && os.Getenv("HUBBUB_AIKEY") != "" {
+		c.Notification.AppInsightsKey = os.Getenv("HUBBUB_AIKEY")
+	}
+	if c.Notification.CustomEventTitle == "" && os.Getenv("HUBBUB_AITITLE") != "" {
+		c.Notification.CustomEventTitle = os.Getenv("HUBBUB_AITITLE")
+	} else if c.Notification.CustomEventTitle == "" && os.Getenv("HUBBUB_AITITLE") == "" {
+		c.Notification.CustomEventTitle = "There has been a pod error in production!"
 	}
 
 }
